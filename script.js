@@ -83,3 +83,32 @@ window.onload = () => {
     generateFaders('grid-freq-seq2');
     console.log("HARDBEAT PRO : Moteurs visuels initialisés.");
 };
+
+// Fonction pour activer l'affichage des Hz sur les faders
+function initFaderLogic(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const faders = container.querySelectorAll('.freq-fader');
+    
+    faders.forEach(fader => {
+        fader.addEventListener('input', (e) => {
+            // Récupère le label (span) juste au-dessus du fader
+            const label = e.target.previousElementSibling;
+            const val = e.target.value;
+            
+            // Affiche la valeur avec un style propre
+            label.innerText = val + "Hz";
+            label.style.color = "#00f3ff"; // Devient brillant quand on change
+        });
+    });
+}
+
+// On modifie légèrement la fonction d'extension pour qu'elle initialise aussi le SEQ 3
+// (À ajouter dans ta logique de clic sur le bouton + EXTEND)
+// initFaderLogic('grid-freq-seq3');
+
+// Initialisation au démarrage
+window.addEventListener('DOMContentLoaded', () => {
+    initFaderLogic('grid-freq-seq2');
+});
