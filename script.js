@@ -1,16 +1,32 @@
-// Configuration de base
-const stepsPerPage = 16;
+/* ==========================================
+   HARDBEAT PRO - CORE ENGINE (script.js)
+   ========================================== */
 
-// Fonction pour générer les pads d'un séquenceur
+// 1. CONFIGURATION ET VARIABLES GLOBALES
+const stepsPerPage = 16;
+let isPlaying = false;
+let currentStep = 0;
+let timerSeq1;
+
+// Le "Carnet de notes" pour le son du Kick
+let kickSettings = {
+    pitch: 150,
+    decay: 0.5,
+    level: 0.8
+};
+
+// Moteur Audio
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// 2. GÉNÉRATION DE L'INTERFACE
 function generateSteps(containerId, className) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    container.innerHTML = ''; // Nettoie le conteneur
+    container.innerHTML = ''; 
     for (let i = 0; i < stepsPerPage; i++) {
         const step = document.createElement('div');
         step.classList.add(className);
         step.dataset.index = i;
-        // Petit cercle LED à l'intérieur du pad
         const led = document.createElement('div');
         led.classList.add('led');
         step.appendChild(led);
@@ -18,7 +34,6 @@ function generateSteps(containerId, className) {
     }
 }
 
-// Fonction pour générer les faders du SEQ 2/3
 function generateFaders(containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -26,61 +41,23 @@ function generateFaders(containerId) {
     for (let i = 0; i < stepsPerPage; i++) {
         const faderContainer = document.createElement('div');
         faderContainer.classList.add('fader-unit');
-        
         const fader = document.createElement('input');
         fader.type = 'range';
-        fader.orient = 'vertical'; // Pour certains navigateurs
         fader.classList.add('freq-fader');
         fader.min = 20;
         fader.max = 15000;
-        
         const label = document.createElement('span');
         label.innerText = '---Hz';
         label.classList.add('hz-label');
-
         faderContainer.appendChild(label);
         faderContainer.appendChild(fader);
         container.appendChild(faderContainer);
     }
 }
 
-// --- LOGIQUE D'EXTENSION SEQ 3 ---
-const addSeqBtn = document.getElementById('add-seq-btn');
-const extensionZone = document.getElementById('extension-zone');
-
-addSeqBtn.addEventListener('click', () => {
-    if (document.getElementById('seq3-container')) return; // Limite à 3
-
-    // Clone le container du SEQ 2
-    const seq2 = document.getElementById('seq2-container');
-    const seq3 = seq2.cloneNode(true);
-    
-    // Ajuste les IDs et titres pour le SEQ 3
-    seq3.id = 'seq3-container';
-    seq3.querySelector('h2').innerText = 'SEQ 3 : FREQ SYNTH (LAYER)';
-    seq3.querySelector('.bpm-control label').innerText = 'TEMPO 3';
-    
-    // On vide les grilles clonées pour les regénérer proprement
-    seq3.querySelector('#grid-freq-seq2').id = 'grid-freq-seq3';
-    seq3.querySelector('#grid-seq2').id = 'grid-seq3';
-    
-    extensionZone.appendChild(seq3);
-    
-    // Génère le visuel pour le nouveau SEQ 3
-    generateSteps('grid-seq3', 'step-pad');
-    generateFaders('grid-freq-seq3');
-    
-    // Change le bouton après usage
-    addSeqBtn.innerText = "MAX LAYERS REACHED";
-    addSeqBtn.disabled = true;
-    addSeqBtn.style.opacity = "0.5";
-});
-
 function generateDrumControls() {
-    // 1. On cherche l'endroit où mettre les réglages
     const container = document.querySelector('.track-selectors');
-    
-    // 2. On définit le "look" des curseurs en HTML
+    if (!container) return;
     const controlsHtml = `
         <div id="drum-params" style="margin-left: 20px; display: flex; gap: 15px; align-items: center; border-left: 2px solid #333; padding-left: 20px;">
             <div class="param">
@@ -97,146 +74,112 @@ function generateDrumControls() {
             </div>
         </div>
     `;
-    
-    // 3. On injecte physiquement ces curseurs dans la page
     container.insertAdjacentHTML('beforeend', controlsHtml);
 
-    // 4. On crée la "connexion" : quand on bouge le curseur, ça change kickSettings
+    // Connexion aux réglages
     document.getElementById('kick-pitch').addEventListener('input', (e) => kickSettings.pitch = parseFloat(e.target.value));
     document.getElementById('kick-decay').addEventListener('input', (e) => kickSettings.decay = parseFloat(e.target.value));
     document.getElementById('kick-level').addEventListener('input', (e) => kickSettings.level = parseFloat(e.target.value));
 }
 
-
-// Initialisation au chargement
-window.onload = () => {
-    generateSteps('grid-seq1', 'step-pad');
-    generateSteps('grid-seq2', 'step-pad');
-    generateFaders('grid-freq-seq2');
-    generateDrumControls();
-    console.log("HARDBEAT PRO : Moteurs visuels initialisés.");
-    setupTempoDrag('display-bpm1');
-setupTempoDrag('display-bpm2');
-};
-
-// Fonction pour activer l'affichage des Hz sur les faders
-function initFaderLogic(containerId) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const faders = container.querySelectorAll('.freq-fader');
+// 3. LOGIQUE AUDIO
+function playKick() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     
-    faders.forEach(fader => {
-        fader.addEventListener('input', (e) => {
-            // Récupère le label (span) juste au-dessus du fader
-            const label = e.target.previousElementSibling;
-            const val = e.target.value;
-            
-            // Affiche la valeur avec un style propre
-            label.innerText = val + "Hz";
-            label.style.color = "#00f3ff"; // Devient brillant quand on change
-        });
-    });
-}
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
 
-// On modifie légèrement la fonction d'extension pour qu'elle initialise aussi le SEQ 3
-// (À ajouter dans ta logique de clic sur le bouton + EXTEND)
-// initFaderLogic('grid-freq-seq3');
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
 
-// Initialisation au démarrage
-window.addEventListener('DOMContentLoaded', () => {
-    initFaderLogic('grid-freq-seq2');
-});
+    const startFreq = kickSettings.pitch;
+    const duration = kickSettings.decay;
 
-// Ajoute ceci dans ton fichier script.js
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('step-pad')) {
-        const pad = e.target;
-        const led = pad.querySelector('.led');
-        
-        // Alterne l'état actif
-        pad.classList.toggle('active');
-        
-        // Allume ou éteint la LED visuellement
-        if (pad.classList.contains('active')) {
-            led.style.background = "#ff0000"; // Rouge ON
-            led.style.boxShadow = "0 0 10px #ff0000";
-        } else {
-            led.style.background = "#330000"; // Rouge OFF
-            led.style.boxShadow = "none";
-        }
-    }
-});
+    osc.frequency.setValueAtTime(startFreq, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
-// --- GESTION DU TEMPO PAR GLISSEMENT ---
-function setupTempoDrag(displayId) {
-    const display = document.getElementById(displayId);
-    let isDragging = false;
-    let startY = 0;
-    let startBpm = 0;
+    gain.gain.setValueAtTime(kickSettings.level, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
-    display.style.cursor = 'ns-resize'; // Curseur haut/bas
-
-    display.addEventListener('mousedown', (e) => {
-        isDragging = true;
-        startY = e.clientY;
-        startBpm = parseInt(display.innerText);
-        display.style.color = "#ffffff"; // Feedback visuel
-    });
-
-    window.addEventListener('mousemove', (e) => {
-        if (!isDragging) return;
-        
-        // Sensibilité : on divise par 2 pour un contrôle précis
-        const delta = Math.floor((startY - e.clientY) / 2);
-        let newBpm = startBpm + delta;
-        
-        // Limites (comme convenu : 40 à 220)
-        newBpm = Math.max(40, Math.min(220, newBpm));
-        
-        display.innerText = newBpm;
-    });
-
-    window.addEventListener('mouseup', () => {
-        if (isDragging) {
-            isDragging = false;
-            display.style.color = "#00f3ff"; // Retour au cyan
-        }
-    });
-}
-
-// --- INITIALISATION DE L'HORLOGE (PLAYHEAD) ---
-let isPlaying = false;
-let currentStep = 0;
-let timerSeq1;
-
-function startSequencer() {
-    if (isPlaying) return;
-    isPlaying = true;
-    runTick();
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
 }
 
 function runTick() {
     if (!isPlaying) return;
 
     const bpm = parseInt(document.getElementById('display-bpm1').innerText);
-    const stepDuration = (60 / bpm) / 4 * 1000; // Un 16ème de note en ms
+    const stepDuration = (60 / bpm) / 4 * 1000;
 
-    // 1. Enlever la surbrillance du pad précédent
     const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
     allPads.forEach(p => p.style.borderColor = "#333");
 
-    // 2. Allumer le pad actuel (La tête de lecture)
     const activePad = allPads[currentStep];
-    if (activePad) activePad.style.borderColor = "#ffffff";
+    if (activePad) {
+        activePad.style.borderColor = "#ffffff";
+        if (activePad.classList.contains('active')) {
+            playKick();
+        }
+    }
 
-    // 3. Passer au pas suivant (Boucle sur 16)
     currentStep = (currentStep + 1) % 16;
-
     timerSeq1 = setTimeout(runTick, stepDuration);
 }
 
-// --- BOUTON PLAY/STOP ---
+// 4. INTERACTION ET ÉVÉNEMENTS
+function initFaderLogic(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const faders = container.querySelectorAll('.freq-fader');
+    faders.forEach(fader => {
+        fader.addEventListener('input', (e) => {
+            const label = e.target.previousElementSibling;
+            label.innerText = e.target.value + "Hz";
+            label.style.color = "#00f3ff";
+        });
+    });
+}
+
+function setupTempoDrag(displayId) {
+    const display = document.getElementById(displayId);
+    if (!display) return;
+    let isDragging = false;
+    let startY = 0;
+    let startBpm = 0;
+
+    display.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startY = e.clientY;
+        startBpm = parseInt(display.innerText);
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const delta = Math.floor((startY - e.clientY) / 2);
+        let newBpm = Math.max(40, Math.min(220, startBpm + delta));
+        display.innerText = newBpm;
+    });
+
+    window.addEventListener('mouseup', () => isDragging = false);
+}
+
+// Clic sur les pads
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('step-pad')) {
+        const pad = e.target;
+        const led = pad.querySelector('.led');
+        pad.classList.toggle('active');
+        if (pad.classList.contains('active')) {
+            led.style.background = "#ff0000";
+            led.style.boxShadow = "0 0 10px #ff0000";
+        } else {
+            led.style.background = "#330000";
+            led.style.boxShadow = "none";
+        }
+    }
+});
+
+// Bouton Play/Stop
 const playBtn = document.getElementById('master-play-stop');
 playBtn.addEventListener('click', () => {
     if (isPlaying) {
@@ -245,85 +188,39 @@ playBtn.addEventListener('click', () => {
         playBtn.innerText = "PLAY / STOP";
         playBtn.style.background = "#222";
     } else {
+        isPlaying = true;
         playBtn.innerText = "STOP";
         playBtn.style.background = "#ff0000";
-        startSequencer();
+        runTick();
     }
 });
 
+// Bouton Extension SEQ 3
+document.getElementById('add-seq-btn').addEventListener('click', function() {
+    if (document.getElementById('seq3-container')) return;
+    const seq2 = document.getElementById('seq2-container');
+    const seq3 = seq2.cloneNode(true);
+    seq3.id = 'seq3-container';
+    seq3.querySelector('h2').innerText = 'SEQ 3 : FREQ SYNTH (LAYER)';
+    seq3.querySelector('.bpm-control label').innerText = 'TEMPO 3';
+    seq3.querySelector('.freq-sliders-container').id = 'grid-freq-seq3';
+    seq3.querySelector('.step-grid').id = 'grid-seq3';
+    document.getElementById('extension-zone').appendChild(seq3);
+    generateSteps('grid-seq3', 'step-pad');
+    generateFaders('grid-freq-seq3');
+    initFaderLogic('grid-freq-seq3');
+    this.disabled = true;
+    this.style.opacity = "0.5";
+});
 
-// 1. Création du contexte audio (le moteur de son)
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-// 1. Création du contexte audio (le moteur de son)
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-// 2. Fonction pour synthétiser un Kick
-function playKick() {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-
-    // La fréquence chute rapidement pour faire le "Poum"
-    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-    // Le volume descend aussi pour la durée du son
-    gain.gain.setValueAtTime(1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.5);
-}
-
-// 3. Modifier la fonction runTick pour déclencher le son
-// Trouve ta fonction runTick() et ajoute cette vérification à l'intérieur :
-function runTick() {
-    if (!isPlaying) return;
-
-    const bpm = parseInt(document.getElementById('display-bpm1').innerText);
-    const stepDuration = (60 / bpm) / 4 * 1000;
-
-    const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
-    allPads.forEach(p => p.style.borderColor = "#333");
-
-    const activePad = allPads[currentStep];
-    if (activePad) {
-        activePad.style.borderColor = "#ffffff";
-        
-        // SI LE PAD EST ALLUMÉ (actif), ON JOUE LE SON !
-        if (activePad.classList.contains('active')) {
-            playKick();
-        }
-    }
-
-    currentStep = (currentStep + 1) % 16;
-    timerSeq1 = setTimeout(runTick, stepDuration);
-}
-
-// 3. Modifier la fonction runTick pour déclencher le son
-// Trouve ta fonction runTick() et ajoute cette vérification à l'intérieur :
-function runTick() {
-    if (!isPlaying) return;
-
-    const bpm = parseInt(document.getElementById('display-bpm1').innerText);
-    const stepDuration = (60 / bpm) / 4 * 1000;
-
-    const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
-    allPads.forEach(p => p.style.borderColor = "#333");
-
-    const activePad = allPads[currentStep];
-    if (activePad) {
-        activePad.style.borderColor = "#ffffff";
-        
-        // SI LE PAD EST ALLUMÉ (actif), ON JOUE LE SON !
-        if (activePad.classList.contains('active')) {
-            playKick();
-        }
-    }
-
-    currentStep = (currentStep + 1) % 16;
-    timerSeq1 = setTimeout(runTick, stepDuration);
-}
+// 5. INITIALISATION FINALE
+window.onload = () => {
+    generateSteps('grid-seq1', 'step-pad');
+    generateSteps('grid-seq2', 'step-pad');
+    generateFaders('grid-freq-seq2');
+    generateDrumControls();
+    initFaderLogic('grid-freq-seq2');
+    setupTempoDrag('display-bpm1');
+    setupTempoDrag('display-bpm2');
+    console.log("HARDBEAT PRO : Moteurs prêts.");
+};
