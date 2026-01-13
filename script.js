@@ -217,3 +217,52 @@ playBtn.addEventListener('click', () => {
         startSequencer();
     }
 });
+
+
+// 1. Création du contexte audio (le moteur de son)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+// 2. Fonction pour synthétiser un Kick
+function playKick() {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    // La fréquence chute rapidement pour faire le "Poum"
+    osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    // Le volume descend aussi pour la durée du son
+    gain.gain.setValueAtTime(1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.5);
+}
+
+// 3. Modifier la fonction runTick pour déclencher le son
+// Trouve ta fonction runTick() et ajoute cette vérification à l'intérieur :
+function runTick() {
+    if (!isPlaying) return;
+
+    const bpm = parseInt(document.getElementById('display-bpm1').innerText);
+    const stepDuration = (60 / bpm) / 4 * 1000;
+
+    const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
+    allPads.forEach(p => p.style.borderColor = "#333");
+
+    const activePad = allPads[currentStep];
+    if (activePad) {
+        activePad.style.borderColor = "#ffffff";
+        
+        // SI LE PAD EST ALLUMÉ (actif), ON JOUE LE SON !
+        if (activePad.classList.contains('active')) {
+            playKick();
+        }
+    }
+
+    currentStep = (currentStep + 1) % 16;
+    timerSeq1 = setTimeout(runTick, stepDuration);
+}
