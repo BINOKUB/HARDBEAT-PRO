@@ -121,41 +121,70 @@ function updatePadVisuals() {
     });
 }
 
+// --- GESTION DES CLICS (PADS ET BOUTONS DE PISTES) ---
 document.addEventListener('click', (e) => {
-    // Clic sur un Pad
+    
+    // 1. CLIC SUR UN PAD (Séquenceur 1)
     if (e.target.closest('.step-pad') && e.target.closest('#grid-seq1')) {
         const pad = e.target.closest('.step-pad');
         const index = parseInt(pad.dataset.index);
+        
+        // On inverse l'état dans la mémoire (vrai/faux)
         drumSequences[currentTrackIndex][index] = !drumSequences[currentTrackIndex][index];
+        
+        // On met à jour le visuel immédiatement
         updatePadVisuals();
     }
 
-    // Clic sur les boutons de pistes (KIK, SNARE...)
+    // 2. CLIC SUR UN BOUTON DE PISTE (KIK, SNARE, etc.)
     if (e.target.classList.contains('track-btn')) {
+        // Design des boutons : on enlève l'allumage cyan des autres, on l'active sur celui-ci
         document.querySelectorAll('.track-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
+        
+        // On change l'index de la piste (0 pour Kik, 1 pour Snare...)
         currentTrackIndex = parseInt(e.target.dataset.track);
-        updatePadVisuals();
+        
+        // --- LES DEUX ACTIONS MAGIQUES ---
+        updatePadVisuals();    // 1. On montre les pads rouges de CET instrument
+        showParamsForTrack(currentTrackIndex); // 2. On montre les SLIDERS de CET instrument
     }
 });
+
+// Cette fonction doit aussi être présente pour que showParamsForTrack fonctionne :
+function showParamsForTrack(trackIndex) {
+    document.querySelectorAll('.instr-params').forEach(el => {
+        el.style.display = 'none';
+    });
+    const activeParams = document.getElementById(`params-track-${trackIndex}`);
+    if (activeParams) {
+        activeParams.style.display = 'flex';
+    }
+}
 
 // 5. RÉGLAGES UI
 function generateDrumControls() {
     const container = document.querySelector('.track-selectors');
     const html = `
-        <div id="global-params" style="margin-left:20px; display:flex; gap:15px; border-left:2px solid #333; padding-left:20px;">
-            <div class="group">
-                <span style="font-size:9px; color:var(--accent-color)">KICK</span>
-                <input type="range" id="kick-pitch" min="50" max="300" value="150" style="width:60px;">
-                <input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5" style="width:60px;">
+        <div id="instruments-params-container" style="margin-left:20px; border-left:2px solid #333; padding-left:20px;">
+            
+            <div id="params-track-0" class="instr-params" style="display:flex; gap:15px; align-items:center;">
+                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">KICK ></span>
+                <div class="group"><label>PITCH</label><input type="range" id="kick-pitch" min="50" max="300" value="150"></div>
+                <div class="group"><label>DECAY</label><input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5"></div>
             </div>
-            <div class="group">
-                <span style="font-size:9px; color:var(--accent-color)">SNARE</span>
-                <input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1" style="width:60px;">
-                <input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000" style="width:60px;">
+
+            <div id="params-track-1" class="instr-params" style="display:none; gap:15px; align-items:center;">
+                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">SNARE ></span>
+                <div class="group"><label>SNAPPY</label><input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1"></div>
+                <div class="group"><label>TONE</label><input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000"></div>
             </div>
-        </div>`;
+
+            </div>`;
+    
     container.insertAdjacentHTML('beforeend', html);
+
+    // Liaison des événements
     document.getElementById('kick-pitch').oninput = (e) => kickSettings.pitch = parseFloat(e.target.value);
     document.getElementById('kick-decay').oninput = (e) => kickSettings.decay = parseFloat(e.target.value);
     document.getElementById('snare-snappy').oninput = (e) => snareSettings.snappy = parseFloat(e.target.value);
@@ -199,4 +228,17 @@ function setupTempoDrag(displayId) {
         display.innerText = Math.max(40, Math.min(220, startBpm + delta));
     });
     window.addEventListener('mouseup', () => isDragging = false);
+}
+
+function showParamsForTrack(trackIndex) {
+    // On cache tous les groupes de paramètres
+    document.querySelectorAll('.instr-params').forEach(el => {
+        el.style.display = 'none';
+    });
+    
+    // On affiche seulement celui de la piste active
+    const activeParams = document.getElementById(`params-track-${trackIndex}`);
+    if (activeParams) {
+        activeParams.style.display = 'flex';
+    }
 }
