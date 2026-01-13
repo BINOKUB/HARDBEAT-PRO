@@ -76,11 +76,44 @@ addSeqBtn.addEventListener('click', () => {
     addSeqBtn.style.opacity = "0.5";
 });
 
+function generateDrumControls() {
+    // 1. On cherche l'endroit où mettre les réglages
+    const container = document.querySelector('.track-selectors');
+    
+    // 2. On définit le "look" des curseurs en HTML
+    const controlsHtml = `
+        <div id="drum-params" style="margin-left: 20px; display: flex; gap: 15px; align-items: center; border-left: 2px solid #333; padding-left: 20px;">
+            <div class="param">
+                <label style="font-size: 10px; display: block; color: #888;">PITCH</label>
+                <input type="range" id="kick-pitch" min="50" max="300" value="150" style="width: 80px;">
+            </div>
+            <div class="param">
+                <label style="font-size: 10px; display: block; color: #888;">DECAY</label>
+                <input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5" style="width: 80px;">
+            </div>
+            <div class="param">
+                <label style="font-size: 10px; display: block; color: #888;">LEVEL</label>
+                <input type="range" id="kick-level" min="0" max="1" step="0.1" value="0.8" style="width: 80px;">
+            </div>
+        </div>
+    `;
+    
+    // 3. On injecte physiquement ces curseurs dans la page
+    container.insertAdjacentHTML('beforeend', controlsHtml);
+
+    // 4. On crée la "connexion" : quand on bouge le curseur, ça change kickSettings
+    document.getElementById('kick-pitch').addEventListener('input', (e) => kickSettings.pitch = parseFloat(e.target.value));
+    document.getElementById('kick-decay').addEventListener('input', (e) => kickSettings.decay = parseFloat(e.target.value));
+    document.getElementById('kick-level').addEventListener('input', (e) => kickSettings.level = parseFloat(e.target.value));
+}
+
+
 // Initialisation au chargement
 window.onload = () => {
     generateSteps('grid-seq1', 'step-pad');
     generateSteps('grid-seq2', 'step-pad');
     generateFaders('grid-freq-seq2');
+    generateDrumControls();
     console.log("HARDBEAT PRO : Moteurs visuels initialisés.");
     setupTempoDrag('display-bpm1');
 setupTempoDrag('display-bpm2');
@@ -222,6 +255,9 @@ playBtn.addEventListener('click', () => {
 // 1. Création du contexte audio (le moteur de son)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+// 1. Création du contexte audio (le moteur de son)
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
 // 2. Fonction pour synthétiser un Kick
 function playKick() {
     const osc = audioCtx.createOscillator();
@@ -240,6 +276,31 @@ function playKick() {
 
     osc.start();
     osc.stop(audioCtx.currentTime + 0.5);
+}
+
+// 3. Modifier la fonction runTick pour déclencher le son
+// Trouve ta fonction runTick() et ajoute cette vérification à l'intérieur :
+function runTick() {
+    if (!isPlaying) return;
+
+    const bpm = parseInt(document.getElementById('display-bpm1').innerText);
+    const stepDuration = (60 / bpm) / 4 * 1000;
+
+    const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
+    allPads.forEach(p => p.style.borderColor = "#333");
+
+    const activePad = allPads[currentStep];
+    if (activePad) {
+        activePad.style.borderColor = "#ffffff";
+        
+        // SI LE PAD EST ALLUMÉ (actif), ON JOUE LE SON !
+        if (activePad.classList.contains('active')) {
+            playKick();
+        }
+    }
+
+    currentStep = (currentStep + 1) % 16;
+    timerSeq1 = setTimeout(runTick, stepDuration);
 }
 
 // 3. Modifier la fonction runTick pour déclencher le son
