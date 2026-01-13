@@ -219,8 +219,75 @@ window.onload = () => {
     generateSteps('grid-seq2', 'step-pad');
     generateFaders('grid-freq-seq2');
     generateDrumControls();
+   generateSnareControls();
     initFaderLogic('grid-freq-seq2');
     setupTempoDrag('display-bpm1');
     setupTempoDrag('display-bpm2');
     console.log("HARDBEAT PRO : Moteurs prêts.");
 };
+
+
+//************************************************************ ****************** PARTIE DU SNARE *********************************************************************************************
+
+// 1. Réglages du Snare
+let snareSettings = {
+    snappy: 1,  // Quantité de bruit (le timbre)
+    tone: 1000, // Fréquence du filtre
+    level: 0.6
+};
+
+// 2. Fonction pour créer le bruit blanc (essentiel pour le Snare)
+function playSnare() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    // Création d'un buffer de bruit blanc
+    const bufferSize = audioCtx.sampleRate * 0.2; // 200ms de bruit
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    const noiseSource = audioCtx.createBufferSource();
+    noiseSource.buffer = buffer;
+
+    // Filtre pour donner du "Tone" au Snare
+    const noiseFilter = audioCtx.createBiquadFilter();
+    noiseFilter.type = 'highpass';
+    noiseFilter.frequency.setValueAtTime(snareSettings.tone, audioCtx.currentTime);
+
+    const noiseGain = audioCtx.createGain();
+    
+    noiseSource.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(audioCtx.destination);
+
+    // Enveloppe du Snare
+    noiseGain.gain.setValueAtTime(snareSettings.level, audioCtx.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2 * snareSettings.snappy);
+
+    noiseSource.start();
+    noiseSource.stop(audioCtx.currentTime + 0.2);
+}
+
+// 3. Fonction pour générer les boutons du Snare (Interface)
+function generateSnareControls() {
+    const container = document.querySelector('.track-selectors');
+    const controlsHtml = `
+        <div id="snare-params" style="margin-left: 20px; display: flex; gap: 15px; align-items: center; border-left: 2px solid #333; padding-left: 20px;">
+            <div class="param">
+                <label style="font-size: 10px; display: block; color: #888;">SNAPPY</label>
+                <input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1" style="width: 80px;">
+            </div>
+            <div class="param">
+                <label style="font-size: 10px; display: block; color: #888;">TONE</label>
+                <input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000" style="width: 80px;">
+            </div>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', controlsHtml);
+
+    // Écouteurs Snare
+    document.getElementById('snare-snappy').addEventListener('input', (e) => snareSettings.snappy = parseFloat(e.target.value));
+    document.getElementById('snare-tone').addEventListener('input', (e) => snareSettings.tone = parseFloat(e.target.value));
+}
