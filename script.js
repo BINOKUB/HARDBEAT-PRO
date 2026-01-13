@@ -105,24 +105,35 @@ function playKick() {
     osc.stop(audioCtx.currentTime + duration);
 }
 
+// Variable pour savoir quel instrument on est en train d'éditer visuellement
+let currentTrackIndex = 0; 
+
+// On crée une mémoire pour les 5 pistes (0=KIK, 1=SNARE, 2=HH-C, 3=HH-O, 4=FM)
+// Chaque piste contient 64 pas (4 pages de 16)
+let drumSequences = Array.from({ length: 5 }, () => Array(64).fill(false));
+
 function runTick() {
     if (!isPlaying) return;
 
-    const bpm = parseInt(document.getElementById('display-bpm1').innerText);
-    const stepDuration = (60 / bpm) / 4 * 1000;
+    const bpm1 = parseInt(document.getElementById('display-bpm1').innerText);
+    const stepDuration = (60 / bpm1) / 4 * 1000;
 
+    // 1. Gestion visuelle (La lumière qui défile sur les 16 pads)
     const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
     allPads.forEach(p => p.style.borderColor = "#333");
-
-    const activePad = allPads[currentStep];
-    if (activePad) {
-        activePad.style.borderColor = "#ffffff";
-        if (activePad.classList.contains('active')) {
-            playKick();
-        }
+    if (allPads[currentStep]) {
+        allPads[currentStep].style.borderColor = "#ffffff";
     }
 
-    currentStep = (currentStep + 1) % 16;
+    // 2. LOGIQUE SONORE : On vérifie les 5 pistes en même temps à chaque pas !
+    // (C'est ça qui permet de faire jouer un Kick et un Snare sur le même temps)
+    
+    if (drumSequences[0][currentStep]) playKick();  // Piste 0 : KIK
+    if (drumSequences[1][currentStep]) playSnare(); // Piste 1 : SNARE
+    // (On ajoutera les autres ici plus tard)
+
+    // 3. Avancement du pas
+    currentStep = (currentStep + 1) % 16; // Pour l'instant on reste sur 16 pas
     timerSeq1 = setTimeout(runTick, stepDuration);
 }
 
