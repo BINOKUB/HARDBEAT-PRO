@@ -112,3 +112,23 @@ function initFaderLogic(containerId) {
 window.addEventListener('DOMContentLoaded', () => {
     initFaderLogic('grid-freq-seq2');
 });
+
+// Ajoute ceci dans ton fichier script.js
+document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('step-pad')) {
+        const pad = e.target;
+        const led = pad.querySelector('.led');
+        
+        // Alterne l'état actif
+        pad.classList.toggle('active');
+        
+        // Allume ou éteint la LED visuellement
+        if (pad.classList.contains('active')) {
+            led.style.background = "#ff0000"; // Rouge ON
+            led.style.boxShadow = "0 0 10px #ff0000";
+        } else {
+            led.style.background = "#330000"; // Rouge OFF
+            led.style.boxShadow = "none";
+        }
+    }
+});
