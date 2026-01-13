@@ -82,6 +82,8 @@ window.onload = () => {
     generateSteps('grid-seq2', 'step-pad');
     generateFaders('grid-freq-seq2');
     console.log("HARDBEAT PRO : Moteurs visuels initialisés.");
+    setupTempoDrag('display-bpm1');
+setupTempoDrag('display-bpm2');
 };
 
 // Fonction pour activer l'affichage des Hz sur les faders
@@ -130,5 +132,88 @@ document.addEventListener('click', (e) => {
             led.style.background = "#330000"; // Rouge OFF
             led.style.boxShadow = "none";
         }
+    }
+});
+
+// --- GESTION DU TEMPO PAR GLISSEMENT ---
+function setupTempoDrag(displayId) {
+    const display = document.getElementById(displayId);
+    let isDragging = false;
+    let startY = 0;
+    let startBpm = 0;
+
+    display.style.cursor = 'ns-resize'; // Curseur haut/bas
+
+    display.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startY = e.clientY;
+        startBpm = parseInt(display.innerText);
+        display.style.color = "#ffffff"; // Feedback visuel
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        // Sensibilité : on divise par 2 pour un contrôle précis
+        const delta = Math.floor((startY - e.clientY) / 2);
+        let newBpm = startBpm + delta;
+        
+        // Limites (comme convenu : 40 à 220)
+        newBpm = Math.max(40, Math.min(220, newBpm));
+        
+        display.innerText = newBpm;
+    });
+
+    window.addEventListener('mouseup', () => {
+        if (isDragging) {
+            isDragging = false;
+            display.style.color = "#00f3ff"; // Retour au cyan
+        }
+    });
+}
+
+// --- INITIALISATION DE L'HORLOGE (PLAYHEAD) ---
+let isPlaying = false;
+let currentStep = 0;
+let timerSeq1;
+
+function startSequencer() {
+    if (isPlaying) return;
+    isPlaying = true;
+    runTick();
+}
+
+function runTick() {
+    if (!isPlaying) return;
+
+    const bpm = parseInt(document.getElementById('display-bpm1').innerText);
+    const stepDuration = (60 / bpm) / 4 * 1000; // Un 16ème de note en ms
+
+    // 1. Enlever la surbrillance du pad précédent
+    const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
+    allPads.forEach(p => p.style.borderColor = "#333");
+
+    // 2. Allumer le pad actuel (La tête de lecture)
+    const activePad = allPads[currentStep];
+    if (activePad) activePad.style.borderColor = "#ffffff";
+
+    // 3. Passer au pas suivant (Boucle sur 16)
+    currentStep = (currentStep + 1) % 16;
+
+    timerSeq1 = setTimeout(runTick, stepDuration);
+}
+
+// --- BOUTON PLAY/STOP ---
+const playBtn = document.getElementById('master-play-stop');
+playBtn.addEventListener('click', () => {
+    if (isPlaying) {
+        isPlaying = false;
+        clearTimeout(timerSeq1);
+        playBtn.innerText = "PLAY / STOP";
+        playBtn.style.background = "#222";
+    } else {
+        playBtn.innerText = "STOP";
+        playBtn.style.background = "#ff0000";
+        startSequencer();
     }
 });
