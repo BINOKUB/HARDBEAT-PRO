@@ -47,7 +47,7 @@
             </div>
         </section>
 
-        <section id="seq2-container" class="rack-section">
+        <section id="seq2-container" class="rack-section synth-instance" data-id="2">
             <div class="section-header">
                 <h2>SEQ 2 : FREQ SYNTH</h2>
                 <div class="bpm-control">
@@ -57,19 +57,23 @@
                 </div>
             </div>
 
-            <div class="freq-sliders-container" id="grid-freq-seq2">
-                </div>
-
-            <div class="step-grid" id="grid-seq2">
-                </div>
+            <div class="freq-sliders-container" id="grid-freq-seq2"></div>
+            <div class="step-grid" id="grid-seq2"></div>
             
             <div class="synth-controls">
                 <div class="random-unit">
-                    <button id="btn-random">RANDOMIZE</button>
-                    <label>64 PAS <input type="checkbox" id="check-random-64"></label>
+                    <button class="btn-random">RANDOMIZE</button>
+                    <label>64 PAS <input type="checkbox" class="check-random-64"></label>
                 </div>
                 </div>
         </section>
+
+        <div id="extension-zone"></div>
+
+        <footer id="ui-footer">
+            <button id="add-seq-btn">+ EXTEND TO SEQ 3 (HARDGROOVE LAYER)</button>
+        </footer>
+      
     </main>
 
     <script src="script.js"></script>
