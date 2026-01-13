@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HARDBEAT PRO | BINOKUB Synthesis</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <main id="rack-container">
+        <header id="master-control">
+            <div class="logo">HARDBEAT PRO</div>
+            <button id="master-play-stop">PLAY / STOP</button>
+            <div class="master-volume">
+                <label>MASTER VOL</label>
+                <input type="range" id="master-gain" min="0" max="1" step="0.01">
+            </div>
+        </header>
+
+        <section id="seq1-container" class="rack-section">
+            <div class="section-header">
+                <h2>SEQ 1 : DRUM ENGINE</h2>
+                <div class="bpm-control">
+                    <label>TEMPO 1</label>
+                    <div id="knob-bpm1" class="knob"></div>
+                    <span id="display-bpm1">120</span> BPM
+                </div>
+            </div>
+
+            <div class="track-selectors">
+                <button class="track-btn active" data-track="0">KIK</button>
+                <button class="track-btn" data-track="1">SNARE</button>
+                <button class="track-btn" data-track="2">HH-CLOSE</button>
+                <button class="track-btn" data-track="3">HH-OPEN</button>
+                <button class="track-btn" data-track="4">FM-DRUM</button>
+            </div>
+
+            <div class="step-grid" id="grid-seq1">
+                </div>
+
+            <div class="page-selectors">
+                <button class="page-btn active" data-page="0">PAGE 1</button>
+                <button class="page-btn" data-page="1">PAGE 2</button>
+                <button class="page-btn" data-page="2">PAGE 3</button>
+                <button class="page-btn" data-page="3">PAGE 4</button>
+            </div>
+        </section>
+
+        <section id="seq2-container" class="rack-section">
+            <div class="section-header">
+                <h2>SEQ 2 : FREQ SYNTH</h2>
+                <div class="bpm-control">
+                    <label>TEMPO 2</label>
+                    <div id="knob-bpm2" class="knob"></div>
+                    <span id="display-bpm2">122</span> BPM
+                </div>
+            </div>
+
+            <div class="freq-sliders-container" id="grid-freq-seq2">
+                </div>
+
+            <div class="step-grid" id="grid-seq2">
+                </div>
+            
+            <div class="synth-controls">
+                <div class="random-unit">
+                    <button id="btn-random">RANDOMIZE</button>
+                    <label>64 PAS <input type="checkbox" id="check-random-64"></label>
+                </div>
+                </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
