@@ -1,1 +1,87 @@
+/* Style de base HARDBEAT PRO */
+body {
+    background-color: #0a0a0a; /* Noir profond */
+    color: #00f3ff; /* Bleu néon */
+    font-family: 'Courier New', Courier, monospace;
+    padding: 20px;
+}
 
+#rack-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    border: 2px solid #333;
+    padding: 20px;
+    background: #111;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.rack-section {
+    border-bottom: 1px solid #333;
+    padding-bottom: 30px;
+    margin-bottom: 30px;
+}
+
+/* La Grille de Pads */
+.step-grid {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.step-pad {
+    width: 45px;
+    height: 45px;
+    background: #222;
+    border: 2px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.step-pad:hover { border-color: #00f3ff; }
+
+/* Les LEDs éteintes */
+.led {
+    width: 8px;
+    height: 8px;
+    background: #300; /* Rouge sombre */
+    border-radius: 50%;
+}
+
+/* Les Faders verticaux */
+.freq-sliders-container {
+    display: flex;
+    gap: 12px;
+    height: 150px;
+    align-items: flex-end;
+    margin-bottom: 10px;
+}
+
+.fader-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.freq-fader {
+    appearance: slider-vertical; /* Pour Chrome/Safari */
+    width: 20px;
+    height: 120px;
+    background: #333;
+}
+
+.hz-label { font-size: 10px; color: #666; }
+
+/* Bouton d'extension */
+#add-seq-btn {
+    background: #00f3ff;
+    color: #000;
+    border: none;
+    padding: 15px 30px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 5px;
+    width: 100%;
+}
