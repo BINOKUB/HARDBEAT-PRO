@@ -193,6 +193,8 @@ function generateDrumControls() {
     container.insertAdjacentHTML('beforeend', html);
 
     // Écouteurs pour tous les instruments
+   document.getElementById('hhc-level').oninput = (e) => hhSettings.levelClose = parseFloat(e.target.value);
+    document.getElementById('hho-level').oninput = (e) => hhSettings.levelOpen = parseFloat(e.target.value);
     document.getElementById('kick-pitch').oninput = (e) => kickSettings.pitch = parseFloat(e.target.value);
     document.getElementById('kick-decay').oninput = (e) => kickSettings.decay = parseFloat(e.target.value);
     document.getElementById('snare-snappy').oninput = (e) => snareSettings.snappy = parseFloat(e.target.value);
@@ -207,7 +209,8 @@ let hhSettings = {
     tone: 8000,
     decayClose: 0.05,
     decayOpen: 0.3,
-    level: 0.4
+    levelClose: 0.4, // Nouveau
+    levelOpen: 0.5   // Nouveau
 };
 
 function playHiHat(isOpen) {
@@ -231,8 +234,9 @@ function playHiHat(isOpen) {
     gain.connect(audioCtx.destination);
 
     const duration = isOpen ? hhSettings.decayOpen : hhSettings.decayClose;
+    const currentLevel = isOpen ? hhSettings.levelOpen : hhSettings.levelClose; // On choisit le bon volume
 
-    gain.gain.setValueAtTime(hhSettings.level, audioCtx.currentTime);
+    gain.gain.setValueAtTime(currentLevel, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
 
     noiseSource.start();
