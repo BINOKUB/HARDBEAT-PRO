@@ -8,10 +8,8 @@ let isPlaying = false;
 let currentStep = 0;
 let timerSeq1;
 let currentTrackIndex = 0; 
-
 let drumSequences = Array.from({ length: 5 }, () => Array(16).fill(false));
 
-// Paramètres des instruments
 let kickSettings = { pitch: 150, decay: 0.5, level: 0.8 };
 let snareSettings = { snappy: 1, tone: 1000, level: 0.6 };
 let hhSettings = { tone: 8000, decayClose: 0.05, decayOpen: 0.3, levelClose: 0.4, levelOpen: 0.5 };
@@ -21,9 +19,9 @@ let fmSettings = { carrierPitch: 100, modPitch: 50, fmAmount: 100, decay: 0.3, l
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 const masterGain = audioCtx.createGain();
 masterGain.connect(audioCtx.destination);
-masterGain.gain.value = 0.5; // Volume global par défaut
+masterGain.gain.value = 0.5; 
 
-// 3. LOGIQUE AUDIO (Connectée au masterGain)
+// 3. LOGIQUE AUDIO
 function playKick() {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -63,8 +61,8 @@ function playHiHat(isOpen) {
     const gain = audioCtx.createGain();
     noiseSource.connect(filter); filter.connect(gain); gain.connect(masterGain);
     const duration = isOpen ? hhSettings.decayOpen : hhSettings.decayClose;
-    const currentLevel = isOpen ? hhSettings.levelOpen : hhSettings.levelClose;
-    gain.gain.setValueAtTime(currentLevel, audioCtx.currentTime);
+    const level = isOpen ? hhSettings.levelOpen : hhSettings.levelClose;
+    gain.gain.setValueAtTime(level, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
     noiseSource.start(); noiseSource.stop(audioCtx.currentTime + duration);
 }
@@ -82,11 +80,10 @@ function playDrumFM() {
     mainGain.gain.setValueAtTime(fmSettings.level, audioCtx.currentTime);
     mainGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + fmSettings.decay);
     carrier.start(); modulator.start();
-    carrier.stop(audioCtx.currentTime + fmSettings.decay);
-    modulator.stop(audioCtx.currentTime + fmSettings.decay);
+    carrier.stop(audioCtx.currentTime + fmSettings.decay); modulator.stop(audioCtx.currentTime + fmSettings.decay);
 }
 
-// 4. GÉNÉRATION DE L'INTERFACE
+// 4. GÉNÉRATION INTERFACE
 function generateSteps(containerId, className) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -109,45 +106,38 @@ function generateFaders(containerId) {
     for (let i = 0; i < stepsPerPage; i++) {
         const faderContainer = document.createElement('div');
         faderContainer.classList.add('fader-unit');
-        const fader = document.createElement('input');
-        fader.type = 'range';
-        fader.classList.add('freq-fader');
-        fader.min = 20; fader.max = 15000;
-        const label = document.createElement('span');
-        label.innerText = '---Hz';
-        label.classList.add('hz-label');
-        faderContainer.appendChild(label);
-        faderContainer.appendChild(fader);
+        faderContainer.innerHTML = `<span class="hz-label">---Hz</span><input type="range" class="freq-fader" min="20" max="15000">`;
         container.appendChild(faderContainer);
     }
 }
 
 function generateDrumControls() {
     const container = document.querySelector('.track-selectors');
+    if (!container) return;
     const html = `
         <div id="instruments-params-container" style="margin-left:20px; border-left:2px solid #333; padding-left:20px;">
             <div id="params-track-0" class="instr-params" style="display:flex; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">KICK ></span>
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">KICK ></span>
                 <div class="group"><label>PITCH</label><input type="range" id="kick-pitch" min="50" max="300" value="150"></div>
                 <div class="group"><label>DECAY</label><input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5"></div>
             </div>
             <div id="params-track-1" class="instr-params" style="display:none; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">SNARE ></span>
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">SNARE ></span>
                 <div class="group"><label>SNAPPY</label><input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1"></div>
                 <div class="group"><label>TONE</label><input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000"></div>
             </div>
             <div id="params-track-2" class="instr-params" style="display:none; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">HH-CLOSE ></span>
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">HH-CLOSE ></span>
                 <div class="group"><label>TONE</label><input type="range" id="hhc-tone" min="4000" max="12000" step="100" value="8000"></div>
                 <div class="group"><label>LEVEL</label><input type="range" id="hhc-level" min="0" max="1" step="0.1" value="0.4"></div>
             </div>
             <div id="params-track-3" class="instr-params" style="display:none; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">HH-OPEN ></span>
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">HH-OPEN ></span>
                 <div class="group"><label>DECAY</label><input type="range" id="hho-decay" min="0.1" max="0.8" step="0.05" value="0.3"></div>
                 <div class="group"><label>LEVEL</label><input type="range" id="hho-level" min="0" max="1" step="0.1" value="0.5"></div>
             </div>
             <div id="params-track-4" class="instr-params" style="display:none; gap:8px; align-items:center;">
-                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">DRUM FM ></span>
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">DRUM FM ></span>
                 <div class="group"><label>CARRIER</label><input type="range" id="fm-carrier" min="20" max="1000" value="100" style="width:50px;"></div>
                 <div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50" style="width:50px;"></div>
                 <div class="group"><label>FM AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100" style="width:50px;"></div>
@@ -157,7 +147,7 @@ function generateDrumControls() {
         </div>`;
     container.insertAdjacentHTML('beforeend', html);
 
-    // Liaisons événements
+    // Liaisons événements (Correction : ajoutés APRES l'injection HTML)
     document.getElementById('kick-pitch').oninput = (e) => kickSettings.pitch = parseFloat(e.target.value);
     document.getElementById('kick-decay').oninput = (e) => kickSettings.decay = parseFloat(e.target.value);
     document.getElementById('snare-snappy').oninput = (e) => snareSettings.snappy = parseFloat(e.target.value);
@@ -176,7 +166,8 @@ function generateDrumControls() {
 // 5. SÉQUENCEUR & LOGIQUE
 function runTick() {
     if (!isPlaying) return;
-    const bpm = parseInt(document.getElementById('display-bpm1').innerText);
+    const bpmDisplay = document.getElementById('display-bpm1');
+    const bpm = bpmDisplay ? parseInt(bpmDisplay.innerText) : 120;
     const stepDuration = (60 / bpm) / 4 * 1000;
     const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
     
@@ -225,24 +216,22 @@ window.onload = () => {
     setupTempoDrag('display-bpm2');
     document.querySelectorAll('.track-btn').forEach((btn, i) => btn.dataset.track = i);
     
-    // Branchement du Master Volume
-   // Branchement du Master Volume
-const masterVol = document.getElementById('master-volume');
-if (masterVol) {
-    masterVol.oninput = (e) => {
-        const val = parseFloat(e.target.value);
-        // On utilise setValueAtTime pour un changement de volume propre sans craquements
-        masterGain.gain.setValueAtTime(val, audioCtx.currentTime);
-        console.log("Master Volume:", val); // Pour vérifier dans la console si ça bouge
-    };
-}
-   
+    // Correction Master Volume : On force le branchement
+    const masterVol = document.getElementById('master-volume');
+    if (masterVol) {
+        masterVol.oninput = (e) => {
+            const val = parseFloat(e.target.value);
+            masterGain.gain.setTargetAtTime(val, audioCtx.currentTime, 0.02);
+            console.log("Master Volume:", val);
+        };
+    }
 };
 
 // Événements
 document.addEventListener('click', (e) => {
     if (e.target.closest('.step-pad') && e.target.closest('#grid-seq1')) {
-        const index = parseInt(e.target.closest('.step-pad').dataset.index);
+        const pad = e.target.closest('.step-pad');
+        const index = parseInt(pad.dataset.index);
         drumSequences[currentTrackIndex][index] = !drumSequences[currentTrackIndex][index];
         updatePadVisuals();
     }
@@ -256,19 +245,22 @@ document.addEventListener('click', (e) => {
 });
 
 const playBtn = document.getElementById('master-play-stop');
-playBtn.addEventListener('click', () => {
-    if (isPlaying) {
-        isPlaying = false; clearTimeout(timerSeq1);
-        playBtn.innerText = "PLAY / STOP"; playBtn.style.background = "#222";
-    } else {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        isPlaying = true; playBtn.innerText = "STOP"; playBtn.style.background = "#ff0000";
-        runTick();
-    }
-});
+if (playBtn) {
+    playBtn.addEventListener('click', () => {
+        if (isPlaying) {
+            isPlaying = false; clearTimeout(timerSeq1);
+            playBtn.innerText = "PLAY / STOP"; playBtn.style.background = "#222";
+        } else {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            isPlaying = true; playBtn.innerText = "STOP"; playBtn.style.background = "#ff0000";
+            runTick();
+        }
+    });
+}
 
 function setupTempoDrag(displayId) {
     const display = document.getElementById(displayId);
+    if (!display) return;
     let isDragging = false, startY = 0, startBpm = 0;
     display.addEventListener('mousedown', (e) => { isDragging = true; startY = e.clientY; startBpm = parseInt(display.innerText); });
     window.addEventListener('mousemove', (e) => {
