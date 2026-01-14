@@ -220,3 +220,14 @@ h2 {
     align-items: center;
     gap: 2px;
 }
+
+.step-pad span {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    transition: color 0.2s;
+}
+
+/* Le numéro s'illumine un peu quand le pad est actif */
+.step-pad.active span {
+    color: #ff000088 !important;
+}
