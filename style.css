@@ -132,6 +132,7 @@ h2 {
     align-items: center;
     justify-content: center;
     transition: border 0.1s;
+   position: relative;
 }
 
 .step-pad:hover {
