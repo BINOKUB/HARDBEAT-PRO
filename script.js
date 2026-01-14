@@ -116,6 +116,7 @@ function runTick() {
     if (drumSequences[1][currentStep]) playSnare();
     if (drumSequences[2][currentStep]) playHiHat(false);
     if (drumSequences[3][currentStep]) playHiHat(true);
+   if (drumSequences[4][currentStep]) playDrumFM();
 
     currentStep = (currentStep + 1) % 16;
     timerSeq1 = setTimeout(runTick, stepDuration);
@@ -185,6 +186,14 @@ function generateDrumControls() {
                 <div class="group"><label>DECAY</label><input type="range" id="hho-decay" min="0.1" max="0.8" step="0.05" value="0.3"></div>
                 <div class="group"><label>LEVEL</label><input type="range" id="hho-level" min="0" max="1" step="0.1" value="0.5"></div>
             </div>
+            <div id="params-track-4" class="instr-params" style="display:none; gap:10px; align-items:center;">
+                <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">DRUM FM ></span>
+                <div class="group"><label>CARRIER</label><input type="range" id="fm-carrier" min="20" max="1000" value="100"></div>
+                <div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50"></div>
+                <div class="group"><label>FM AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100"></div>
+                <div class="group"><label>DECAY</label><input type="range" id="fm-decay" min="0.05" max="1.5" step="0.05" value="0.3"></div>
+                <div class="group"><label>LEVEL</label><input type="range" id="fm-level" min="0" max="1" step="0.1" value="0.5"></div>
+            </div>
         </div>`;
     
     container.insertAdjacentHTML('beforeend', html);
@@ -197,6 +206,11 @@ function generateDrumControls() {
     document.getElementById('hhc-level').oninput = (e) => hhSettings.levelClose = parseFloat(e.target.value);
     document.getElementById('hho-decay').oninput = (e) => hhSettings.decayOpen = parseFloat(e.target.value);
     document.getElementById('hho-level').oninput = (e) => hhSettings.levelOpen = parseFloat(e.target.value);
+   document.getElementById('fm-carrier').oninput = (e) => fmSettings.carrierPitch = parseFloat(e.target.value);
+    document.getElementById('fm-mod').oninput = (e) => fmSettings.modPitch = parseFloat(e.target.value);
+    document.getElementById('fm-amt').oninput = (e) => fmSettings.fmAmount = parseFloat(e.target.value);
+    document.getElementById('fm-decay').oninput = (e) => fmSettings.decay = parseFloat(e.target.value);
+    document.getElementById('fm-level').oninput = (e) => fmSettings.level = parseFloat(e.target.value);
 }
 
 // 6. INITIALISATION ET UTILS
@@ -233,4 +247,44 @@ function setupTempoDrag(displayId) {
         display.innerText = Math.max(40, Math.min(220, startBpm + delta));
     });
     window.addEventListener('mouseup', () => isDragging = false);
+}
+
+
+// *********************************************************************************************** PARTIE DU DRUM FM ******************
+
+let fmSettings = {
+    carrierPitch: 100, // Fréquence de base
+    modPitch: 50,      // Fréquence du modulateur
+    fmAmount: 100,     // Intensité de la modulation (FM AMT)
+    decay: 0.3,
+    level: 0.5
+};
+
+function playDrumFM() {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const carrier = audioCtx.createOscillator();
+    const modulator = audioCtx.createOscillator();
+    const modGain = audioCtx.createGain(); // C'est le FM AMT
+    const mainGain = audioCtx.createGain();
+
+    carrier.type = 'sine';
+    modulator.type = 'sine'; // On reste sur du sine pour une FM plus musicale, ou 'square' pour plus de bruit
+
+    modulator.frequency.value = fmSettings.modPitch;
+    modGain.gain.value = fmSettings.fmAmount;
+    carrier.frequency.value = fmSettings.carrierPitch;
+
+    modulator.connect(modGain);
+    modGain.connect(carrier.frequency); // Modulation de fréquence
+    carrier.connect(mainGain);
+    mainGain.connect(audioCtx.destination);
+
+    mainGain.gain.setValueAtTime(fmSettings.level, audioCtx.currentTime);
+    mainGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + fmSettings.decay);
+
+    carrier.start();
+    modulator.start();
+    carrier.stop(audioCtx.currentTime + fmSettings.decay);
+    modulator.stop(audioCtx.currentTime + fmSettings.decay);
 }
