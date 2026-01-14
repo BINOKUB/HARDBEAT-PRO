@@ -226,8 +226,17 @@ window.onload = () => {
     document.querySelectorAll('.track-btn').forEach((btn, i) => btn.dataset.track = i);
     
     // Branchement du Master Volume
-    const masterVol = document.getElementById('master-volume');
-    if(masterVol) masterVol.oninput = (e) => masterGain.gain.value = e.target.value;
+   // Branchement du Master Volume
+const masterVol = document.getElementById('master-volume');
+if (masterVol) {
+    masterVol.oninput = (e) => {
+        const val = parseFloat(e.target.value);
+        // On utilise setValueAtTime pour un changement de volume propre sans craquements
+        masterGain.gain.setValueAtTime(val, audioCtx.currentTime);
+        console.log("Master Volume:", val); // Pour vérifier dans la console si ça bouge
+    };
+}
+   
 };
 
 // Événements
