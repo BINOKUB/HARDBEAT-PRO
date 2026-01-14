@@ -88,10 +88,21 @@ function generateSteps(containerId, className) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = ''; 
+    
     for (let i = 0; i < stepsPerPage; i++) {
         const step = document.createElement('div');
         step.classList.add(className);
         step.dataset.index = i;
+
+        // --- AJOUT DES NUMÉROS (Uniquement pour le SEQ 1) ---
+        if (containerId === 'grid-seq1') {
+            const stepNumber = document.createElement('span');
+            stepNumber.innerText = i + 1;
+            stepNumber.style.cssText = "position:absolute; top:2px; left:3px; font-size:8px; color:#555; pointer-events:none;";
+            step.appendChild(stepNumber);
+            step.style.position = "relative"; // Pour que le numéro soit bien placé
+        }
+
         const led = document.createElement('div');
         led.classList.add('led');
         step.appendChild(led);
