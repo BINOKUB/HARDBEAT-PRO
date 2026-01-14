@@ -9,34 +9,34 @@ let synthSequences = {
 };
 
 // Fonction pour jouer une note du synthé
-function playSynthNote(frequency, duration = 0.2) {
+function playSynthNote(frequency, duration = 0.15) {
     if (!frequency || frequency <= 0) return;
 
     const osc = audioCtx.createOscillator();
+    const filter = audioCtx.createBiquadFilter();
     const vca = audioCtx.createGain();
 
-    // Type d'onde : 'sawtooth' pour le Hardgroove, 'square' pour l'Indus
-    osc.type = 'sawtooth'; 
+    osc.type = 'sawtooth'; // Onde en dent de scie pour le punch
     osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
 
-    // Filtre passe-bas pour enlever le côté trop agressif
-    const filter = audioCtx.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.frequency.setValueAtTime(2000, audioCtx.currentTime);
+    // Enveloppe de filtre : le filtre s'ouvre vite et se ferme
+    filter.frequency.setValueAtTime(frequency * 2, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(frequency * 0.5, audioCtx.currentTime + duration);
+    filter.Q.value = 5; // Un peu de résonance pour le "Twang"
 
     osc.connect(filter);
     filter.connect(vca);
-    vca.connect(masterGain); // On tente quand même de le lier au Master !
+    vca.connect(masterGain); 
 
-    // Enveloppe de volume
+    // Enveloppe d'amplitude (Volume)
     vca.gain.setValueAtTime(0, audioCtx.currentTime);
-    vca.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.02);
+    vca.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
     vca.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
 
     osc.start();
     osc.stop(audioCtx.currentTime + duration);
 }
-
 // Branchement sur l'horloge globale (On va devoir modifier runTick dans drums.js)
 function checkSynthTick(step) {
     // Lecture SEQ 2
