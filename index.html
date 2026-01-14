@@ -68,6 +68,22 @@
                 </div>
         </section>
 
+        <div id="synth-global-params" class="instr-params" style="display:flex; gap:20px; background:#111; padding:10px; border:1px solid #333; margin-top:10px;">
+    <span style="font-size:9px; color:#00f3ff; font-weight:bold;">SYNTH MASTER ></span>
+    <div class="group">
+        <label>DISTORTION</label>
+        <input type="range" id="synth-disto" min="0" max="1000" value="400">
+    </div>
+    <div class="group">
+        <label>RESONANCE</label>
+        <input type="range" id="synth-res" min="1" max="25" value="12">
+    </div>
+    <div class="group">
+        <label>CUTOFF ENV</label>
+        <input type="range" id="synth-cutoff" min="1" max="10" step="0.1" value="4">
+    </div>
+</div>
+        
         <div id="extension-zone"></div>
 
         <footer id="ui-footer">
