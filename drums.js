@@ -8,8 +8,6 @@ let currentStep = 0;
 let timerSeq1;
 let currentTrackIndex = 0; 
 let drumSequences = Array.from({ length: 5 }, () => Array(16).fill(false));
-let loopLengths = [16, 16, 16, 16, 16]; // Longueur de boucle par piste (16 par défaut)
-let trackCounters = [0, 0, 0, 0, 0];   // Compteurs individuels pour la polyrythmie
 
 // Paramètres
 let kickSettings = { pitch: 150, decay: 0.5, level: 0.8 };
@@ -128,80 +126,55 @@ function initFaderLogic(containerId) {
 function generateDrumControls() {
     const container = document.querySelector('.track-selectors');
     if (!container) return;
-    
-    // On crée un conteneur dédié pour ne pas polluer le reste du DOM
-    let paramsContainer = document.getElementById('instruments-params-container');
-    if (!paramsContainer) {
-        paramsContainer = document.createElement('div');
-        paramsContainer.id = 'instruments-params-container';
-        paramsContainer.style.cssText = "margin-left:20px; border-left:2px solid #333; padding-left:20px; display:flex;";
-        container.after(paramsContainer); // On le place juste APRÈS les boutons de pistes
-    }
-
-    const names = ["KICK", "SNARE", "HH-CLOSE", "HH-OPEN", "DRUM FM"];
-    
-    // On génère le HTML pour chaque piste proprement
-    let innerHTML = "";
-    for (let i = 0; i < 5; i++) {
-        innerHTML += `
-        <div id="params-track-${i}" class="instr-params" style="display:${i === 0 ? 'flex' : 'none'}; gap:10px; align-items:center;">
-            <span style="font-size:9px; color:#00f3ff; font-weight:bold;">${names[i]} ></span>
-            ${getInstrumentInputs(i)}
-            <div class="group" style="margin-left:10px; padding-left:10px; border-left:1px solid #444; display:flex; flex-direction:column; align-items:center;">
-                <label style="font-size:8px; margin-bottom:2px;">STEPS</label>
-                <div style="display:flex; align-items:center; gap:5px; background:#000; padding:2px 5px; border-radius:3px; border:1px solid #333;">
-                    <button onclick="changeLoopLength(${i}, -1)" style="background:none; border:none; color:#00f3ff; cursor:pointer; font-weight:bold;">-</button>
-                    <span id="step-display-${i}" style="color:#00f3ff; font-family:monospace; font-size:11px; min-width:15px; text-align:center;">16</span>
-                    <button onclick="changeLoopLength(${i}, 1)" style="background:none; border:none; color:#00f3ff; cursor:pointer; font-weight:bold;">+</button>
-                </div>
+    const html = `
+        <div id="instruments-params-container" style="margin-left:20px; border-left:2px solid #333; padding-left:20px;">
+            <div id="params-track-0" class="instr-params" style="display:flex; gap:10px; align-items:center;">
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">KICK ></span>
+                <div class="group"><label>PITCH</label><input type="range" id="kick-pitch" min="50" max="300" value="150"></div>
+                <div class="group"><label>DECAY</label><input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5"></div>
+            </div>
+            <div id="params-track-1" class="instr-params" style="display:none; gap:10px; align-items:center;">
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">SNARE ></span>
+                <div class="group"><label>SNAPPY</label><input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1"></div>
+                <div class="group"><label>TONE</label><input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000"></div>
+            </div>
+            <div id="params-track-2" class="instr-params" style="display:none; gap:10px; align-items:center;">
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">HH-CLOSE ></span>
+                <div class="group"><label>TONE</label><input type="range" id="hhc-tone" min="4000" max="12000" step="100" value="8000"></div>
+                <div class="group"><label>LEVEL</label><input type="range" id="hhc-level" min="0" max="1" step="0.1" value="0.4"></div>
+            </div>
+            <div id="params-track-3" class="instr-params" style="display:none; gap:10px; align-items:center;">
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">HH-OPEN ></span>
+                <div class="group"><label>DECAY</label><input type="range" id="hho-decay" min="0.1" max="0.8" step="0.05" value="0.3"></div>
+                <div class="group"><label>LEVEL</label><input type="range" id="hho-level" min="0" max="1" step="0.1" value="0.5"></div>
+            </div>
+            <div id="params-track-4" class="instr-params" style="display:none; gap:8px; align-items:center;">
+                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">DRUM FM ></span>
+                <div class="group"><label>CARRIER</label><input type="range" id="fm-carrier" min="20" max="1000" value="100" style="width:50px;"></div>
+                <div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50" style="width:50px;"></div>
+                <div class="group"><label>FM AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100" style="width:50px;"></div>
+                <div class="group"><label>DECAY</label><input type="range" id="fm-decay" min="0.05" max="1.5" step="0.05" value="0.3" style="width:50px;"></div>
+                <div class="group"><label>LEVEL</label><input type="range" id="fm-level" min="0" max="1" step="0.1" value="0.5" style="width:50px;"></div>
             </div>
         </div>`;
-    }
-    paramsContainer.innerHTML = innerHTML;
+    container.insertAdjacentHTML('beforeend', html);
 
-    // Ré-attacher les liaisons de sliders
-    attachSliderEvents();
+    // Liaisons
+    document.getElementById('kick-pitch').oninput = (e) => kickSettings.pitch = parseFloat(e.target.value);
+    document.getElementById('kick-decay').oninput = (e) => kickSettings.decay = parseFloat(e.target.value);
+    document.getElementById('snare-snappy').oninput = (e) => snareSettings.snappy = parseFloat(e.target.value);
+    document.getElementById('snare-tone').oninput = (e) => snareSettings.tone = parseFloat(e.target.value);
+    document.getElementById('hhc-tone').oninput = (e) => hhSettings.tone = parseFloat(e.target.value);
+    document.getElementById('hhc-level').oninput = (e) => hhSettings.levelClose = parseFloat(e.target.value);
+    document.getElementById('hho-decay').oninput = (e) => hhSettings.decayOpen = parseFloat(e.target.value);
+    document.getElementById('hho-level').oninput = (e) => hhSettings.levelOpen = parseFloat(e.target.value);
+    document.getElementById('fm-carrier').oninput = (e) => fmSettings.carrierPitch = parseFloat(e.target.value);
+    document.getElementById('fm-mod').oninput = (e) => fmSettings.modPitch = parseFloat(e.target.value);
+    document.getElementById('fm-amt').oninput = (e) => fmSettings.fmAmount = parseFloat(e.target.value);
+    document.getElementById('fm-decay').oninput = (e) => fmSettings.decay = parseFloat(e.target.value);
+    document.getElementById('fm-level').oninput = (e) => fmSettings.level = parseFloat(e.target.value);
 }
 
-// Fonction utilitaire pour les inputs (plus propre)
-function getInstrumentInputs(i) {
-    if (i === 0) return `<div class="group"><label>PITCH</label><input type="range" id="kick-pitch" min="50" max="300" value="150"></div><div class="group"><label>DECAY</label><input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5"></div>`;
-    if (i === 1) return `<div class="group"><label>SNAPPY</label><input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1"></div><div class="group"><label>TONE</label><input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000"></div>`;
-    if (i === 2) return `<div class="group"><label>TONE</label><input type="range" id="hhc-tone" min="4000" max="12000" step="100" value="8000"></div><div class="group"><label>LEVEL</label><input type="range" id="hhc-level" min="0" max="1" step="0.1" value="0.4"></div>`;
-    if (i === 3) return `<div class="group"><label>DECAY</label><input type="range" id="hho-decay" min="0.1" max="0.8" step="0.05" value="0.3"></div><div class="group"><label>LEVEL</label><input type="range" id="hho-level" min="0" max="1" step="0.1" value="0.5"></div>`;
-    return `<div class="group"><label>CARR</label><input type="range" id="fm-carrier" min="20" max="1000" value="100" style="width:40px;"></div><div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50" style="width:40px;"></div><div class="group"><label>AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100" style="width:40px;"></div>`;
-}
-
-function attachSliderEvents() {
-    const ids = ['kick-pitch','kick-decay','snare-snappy','snare-tone','hhc-tone','hhc-level','hho-decay','hho-level','fm-carrier','fm-mod','fm-amt'];
-    ids.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.oninput = (e) => {
-                const val = parseFloat(e.target.value);
-                if (id === 'kick-pitch') kickSettings.pitch = val;
-                if (id === 'kick-decay') kickSettings.decay = val;
-                if (id === 'snare-snappy') snareSettings.snappy = val;
-                if (id === 'snare-tone') snareSettings.tone = val;
-                if (id === 'hhc-tone') hhSettings.tone = val;
-                if (id === 'hhc-level') hhSettings.levelClose = val;
-                if (id === 'hho-decay') hhSettings.decayOpen = val;
-                if (id === 'hho-level') hhSettings.levelOpen = val;
-                if (id === 'fm-carrier') fmSettings.carrierPitch = val;
-                if (id === 'fm-mod') fmSettings.modPitch = val;
-                if (id === 'fm-amt') fmSettings.fmAmount = val;
-            };
-        }
-    });
-}
-
-
-// AJOUTE CETTE FONCTION JUSTE APRÈS generateDrumControls
-function changeLoopLength(trackIndex, delta) {
-    loopLengths[trackIndex] = Math.max(1, Math.min(16, loopLengths[trackIndex] + delta));
-    document.getElementById(`step-display-${trackIndex}`).innerText = loopLengths[trackIndex];
-    trackCounters[trackIndex] = 0; // Reset pour synchroniser au changement
-}
 // --- INITIALISATION ---
 window.onload = () => {
     generateSteps('grid-seq1', 'step-pad');
@@ -244,25 +217,16 @@ function runTick() {
     if (!isPlaying) return;
     const bpm = parseInt(document.getElementById('display-bpm1').innerText);
     const stepDuration = (60 / bpm) / 4 * 1000;
-    
     const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
     allPads.forEach(p => p.style.borderColor = "#333");
-    
-    // Le curseur visuel reste sur le cycle de 16
     if (allPads[currentStep]) allPads[currentStep].style.borderColor = "#ffffff";
-    if (typeof checkSynthTick === "function") checkSynthTick(currentStep);
+   if (typeof checkSynthTick === "function") checkSynthTick(currentStep);
 
-    // LECTURE POLYRYTHMIQUE
-    if (drumSequences[0][trackCounters[0]]) playKick();
-    if (drumSequences[1][trackCounters[1]]) playSnare();
-    if (drumSequences[2][trackCounters[2]]) playHiHat(false);
-    if (drumSequences[3][trackCounters[3]]) playHiHat(true);
-    if (drumSequences[4][trackCounters[4]]) playDrumFM();
-
-    // Incrémentation indépendante de chaque piste
-    for (let i = 0; i < 5; i++) {
-        trackCounters[i] = (trackCounters[i] + 1) % loopLengths[i];
-    }
+    if (drumSequences[0][currentStep]) playKick();
+    if (drumSequences[1][currentStep]) playSnare();
+    if (drumSequences[2][currentStep]) playHiHat(false);
+    if (drumSequences[3][currentStep]) playHiHat(true);
+    if (drumSequences[4][currentStep]) playDrumFM();
 
     currentStep = (currentStep + 1) % 16;
     timerSeq1 = setTimeout(runTick, stepDuration);
