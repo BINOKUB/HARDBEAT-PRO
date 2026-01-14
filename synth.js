@@ -106,3 +106,58 @@ document.addEventListener('click', (e) => {
         led.style.boxShadow = synthSequences.seq3[stepIndex] ? "0 0 10px #7000ff" : "none";
     }
 });
+
+
+// Variables de contrôle temps réel
+let synthParams = {
+    disto: 400,
+    resonance: 12,
+    cutoffEnv: 4
+};
+
+// Branchement des sliders
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('synth-disto').oninput = (e) => {
+        synthParams.disto = parseFloat(e.target.value);
+        distortionNode.curve = createDistortionCurve(synthParams.disto);
+    };
+    document.getElementById('synth-res').oninput = (e) => synthParams.resonance = parseFloat(e.target.value);
+    document.getElementById('synth-cutoff').oninput = (e) => synthParams.cutoffEnv = parseFloat(e.target.value);
+});
+
+/* --- FONCTION PLAY MISE À JOUR --- */
+function playSynthNote(frequency, duration = 0.2) {
+    if (!frequency || frequency <= 0) return;
+
+    const osc = audioCtx.createOscillator();
+    const sub = audioCtx.createOscillator();
+    const filter = audioCtx.createBiquadFilter();
+    const vca = audioCtx.createGain();
+
+    osc.type = 'sawtooth';
+    sub.type = 'square';
+    
+    osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+    sub.frequency.setValueAtTime(frequency / 2, audioCtx.currentTime);
+
+    // Utilisation des nouveaux paramètres
+    filter.type = 'lowpass';
+    filter.Q.value = synthParams.resonance; 
+    
+    // L'enveloppe de filtre dépend du slider CUTOFF ENV
+    filter.frequency.setValueAtTime(frequency * synthParams.cutoffEnv, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(frequency * 0.5, audioCtx.currentTime + duration);
+
+    osc.connect(filter);
+    sub.connect(filter);
+    filter.connect(vca);
+    vca.connect(distortionNode); // Distortion globale
+
+    vca.gain.setValueAtTime(0, audioCtx.currentTime);
+    vca.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+    vca.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+
+    osc.start(); sub.start();
+    osc.stop(audioCtx.currentTime + duration);
+    sub.stop(audioCtx.currentTime + duration);
+}
