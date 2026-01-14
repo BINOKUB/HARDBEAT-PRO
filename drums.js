@@ -135,55 +135,30 @@ function initFaderLogic(containerId) {
 }
 
 function generateDrumControls() {
-    const container = document.querySelector('.track-selectors');
-    if (!container) return;
-    const html = `
-        <div id="instruments-params-container" style="margin-left:20px; border-left:2px solid #333; padding-left:20px;">
-            <div id="params-track-0" class="instr-params" style="display:flex; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">KICK ></span>
-                <div class="group"><label>PITCH</label><input type="range" id="kick-pitch" min="50" max="300" value="150"></div>
-                <div class="group"><label>DECAY</label><input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5"></div>
-            </div>
-            <div id="params-track-1" class="instr-params" style="display:none; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">SNARE ></span>
-                <div class="group"><label>SNAPPY</label><input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1"></div>
-                <div class="group"><label>TONE</label><input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000"></div>
-            </div>
-            <div id="params-track-2" class="instr-params" style="display:none; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">HH-CLOSE ></span>
-                <div class="group"><label>TONE</label><input type="range" id="hhc-tone" min="4000" max="12000" step="100" value="8000"></div>
-                <div class="group"><label>LEVEL</label><input type="range" id="hhc-level" min="0" max="1" step="0.1" value="0.4"></div>
-            </div>
-            <div id="params-track-3" class="instr-params" style="display:none; gap:10px; align-items:center;">
-                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">HH-OPEN ></span>
-                <div class="group"><label>DECAY</label><input type="range" id="hho-decay" min="0.1" max="0.8" step="0.05" value="0.3"></div>
-                <div class="group"><label>LEVEL</label><input type="range" id="hho-level" min="0" max="1" step="0.1" value="0.5"></div>
-            </div>
-            <div id="params-track-4" class="instr-params" style="display:none; gap:8px; align-items:center;">
-                <span style="font-size:9px; color:#00f3ff; font-weight:bold;">DRUM FM ></span>
-                <div class="group"><label>CARRIER</label><input type="range" id="fm-carrier" min="20" max="1000" value="100" style="width:50px;"></div>
-                <div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50" style="width:50px;"></div>
-                <div class="group"><label>FM AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100" style="width:50px;"></div>
-                <div class="group"><label>DECAY</label><input type="range" id="fm-decay" min="0.05" max="1.5" step="0.05" value="0.3" style="width:50px;"></div>
-                <div class="group"><label>LEVEL</label><input type="range" id="fm-level" min="0" max="1" step="0.1" value="0.5" style="width:50px;"></div>
-            </div>
-        </div>`;
-    container.insertAdjacentHTML('beforeend', html);
+    // ÉTAPE 1 : On ne crée plus de HTML ici. 
+    // On attend que l'index.html fournisse les éléments.
+    console.log("Interface HARDBEAT : Liaison des contrôles manuels...");
 
-    // Liaisons
-    document.getElementById('kick-pitch').oninput = (e) => kickSettings.pitch = parseFloat(e.target.value);
-    document.getElementById('kick-decay').oninput = (e) => kickSettings.decay = parseFloat(e.target.value);
-    document.getElementById('snare-snappy').oninput = (e) => snareSettings.snappy = parseFloat(e.target.value);
-    document.getElementById('snare-tone').oninput = (e) => snareSettings.tone = parseFloat(e.target.value);
-    document.getElementById('hhc-tone').oninput = (e) => hhSettings.tone = parseFloat(e.target.value);
-    document.getElementById('hhc-level').oninput = (e) => hhSettings.levelClose = parseFloat(e.target.value);
-    document.getElementById('hho-decay').oninput = (e) => hhSettings.decayOpen = parseFloat(e.target.value);
-    document.getElementById('hho-level').oninput = (e) => hhSettings.levelOpen = parseFloat(e.target.value);
-    document.getElementById('fm-carrier').oninput = (e) => fmSettings.carrierPitch = parseFloat(e.target.value);
-    document.getElementById('fm-mod').oninput = (e) => fmSettings.modPitch = parseFloat(e.target.value);
-    document.getElementById('fm-amt').oninput = (e) => fmSettings.fmAmount = parseFloat(e.target.value);
-    document.getElementById('fm-decay').oninput = (e) => fmSettings.decay = parseFloat(e.target.value);
-    document.getElementById('fm-level').oninput = (e) => fmSettings.level = parseFloat(e.target.value);
+    // ÉTAPE 2 : Branchement des câbles (Liaisons)
+    // On vérifie si l'élément existe avant de lier pour éviter les erreurs
+    const bind = (id, callback) => {
+        const el = document.getElementById(id);
+        if (el) el.oninput = callback;
+    };
+
+    bind('kick-pitch', (e) => kickSettings.pitch = parseFloat(e.target.value));
+    bind('kick-decay', (e) => kickSettings.decay = parseFloat(e.target.value));
+    bind('snare-snappy', (e) => snareSettings.snappy = parseFloat(e.target.value));
+    bind('snare-tone', (e) => snareSettings.tone = parseFloat(e.target.value));
+    bind('hhc-tone', (e) => hhSettings.tone = parseFloat(e.target.value));
+    bind('hhc-level', (e) => hhSettings.levelClose = parseFloat(e.target.value));
+    bind('hho-decay', (e) => hhSettings.decayOpen = parseFloat(e.target.value));
+    bind('hho-level', (e) => hhSettings.levelOpen = parseFloat(e.target.value));
+    bind('fm-carrier', (e) => fmSettings.carrierPitch = parseFloat(e.target.value));
+    bind('fm-mod', (e) => fmSettings.modPitch = parseFloat(e.target.value));
+    bind('fm-amt', (e) => fmSettings.fmAmount = parseFloat(e.target.value));
+    bind('fm-decay', (e) => fmSettings.decay = parseFloat(e.target.value));
+    bind('fm-level', (e) => fmSettings.level = parseFloat(e.target.value));
 }
 
 // --- INITIALISATION ---
