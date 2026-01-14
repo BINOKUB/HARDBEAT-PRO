@@ -186,7 +186,8 @@ window.onload = () => {
     setupTempoDrag('display-bpm2');
     document.querySelectorAll('.track-btn').forEach((btn, i) => btn.dataset.track = i);
 
-    const masterVol = document.getElementById('master-volume');
+    // FIX DU VOLUME : On utilise 'master-gain' (ID de ton HTML)
+    const masterVol = document.getElementById('master-gain'); 
     if (masterVol) {
         masterVol.oninput = (e) => {
             masterGain.gain.setTargetAtTime(parseFloat(e.target.value), audioCtx.currentTime, 0.02);
@@ -211,7 +212,6 @@ window.onload = () => {
         };
     }
 };
-
 // --- RUNTIME ---
 function runTick() {
     if (!isPlaying) return;
