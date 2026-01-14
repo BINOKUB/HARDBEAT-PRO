@@ -221,13 +221,21 @@ h2 {
     gap: 2px;
 }
 
+/* Style des numéros de pads */
 .step-pad span {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
     font-family: 'Courier New', monospace;
     font-weight: bold;
-    transition: color 0.2s;
+    color: #ffffff !important; /* Force le blanc pur */
+    opacity: 0.6;              /* Légèrement transparent pour ne pas être trop agressif */
+    pointer-events: none;      /* Important : pour ne pas bloquer le clic sur le pad */
+    z-index: 2;
 }
 
-/* Le numéro s'illumine un peu quand le pad est actif */
+/* Optionnel : Quand le pad est actif, on peut mettre l'opacité à fond */
 .step-pad.active span {
-    color: #ffffff !important;
+    opacity: 1;
 }
