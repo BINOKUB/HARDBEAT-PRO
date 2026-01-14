@@ -161,3 +161,47 @@ function playSynthNote(frequency, duration = 0.2) {
     osc.stop(audioCtx.currentTime + duration);
     sub.stop(audioCtx.currentTime + duration);
 }
+
+// 1. Configuration du Delay
+const delayNode = audioCtx.createDelay(2.0); // Max 2 secondes
+const feedback = audioCtx.createGain();
+const delayMix = audioCtx.createGain();
+
+// Circuit de Feedback : Le son du délai retourne dans lui-même
+delayNode.connect(feedback);
+feedback.connect(delayNode);
+
+// Connexion globale : Distortion -> Delay -> Master
+distortionNode.connect(delayNode);
+delayNode.connect(delayMix);
+delayMix.connect(masterGain);
+
+// Paramètres par défaut
+let synthParams = {
+    disto: 400,
+    resonance: 12,
+    cutoffEnv: 4,
+    delayAmt: 0.3,
+    delayTime: 0.375 // Équivalent d'une croche à 160 BPM environ
+};
+
+// 2. Écouteurs pour le Delay
+document.addEventListener('DOMContentLoaded', () => {
+    // ... tes anciens écouteurs ...
+    
+    document.getElementById('synth-delay-amt').oninput = (e) => {
+        synthParams.delayAmt = parseFloat(e.target.value);
+        delayMix.gain.setValueAtTime(synthParams.delayAmt, audioCtx.currentTime);
+        feedback.gain.setValueAtTime(synthParams.delayAmt * 0.7, audioCtx.currentTime); // Feedback auto
+    };
+
+    document.getElementById('synth-delay-time').oninput = (e) => {
+        synthParams.delayTime = parseFloat(e.target.value);
+        delayNode.delayTime.setTargetAtTime(synthParams.delayTime, audioCtx.currentTime, 0.1);
+    };
+    
+    // Initialisation des gains
+    delayMix.gain.value = synthParams.delayAmt;
+    feedback.gain.value = synthParams.delayAmt * 0.7;
+    delayNode.delayTime.value = synthParams.delayTime;
+});
