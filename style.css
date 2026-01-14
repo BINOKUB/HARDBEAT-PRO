@@ -209,3 +209,14 @@ h2 {
     font-weight: bold;
     font-family: 'Courier New', monospace;
 }
+
+.instr-params .group input[type="range"] {
+    width: 60px !important; /* Réduit la largeur pour que les 5 rentrent */
+}
+
+.instr-params .group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
