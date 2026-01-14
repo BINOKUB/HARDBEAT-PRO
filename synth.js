@@ -9,33 +9,58 @@ let synthSequences = {
 };
 
 // Fonction pour jouer une note du synthé
-function playSynthNote(frequency, duration = 0.15) {
+/* --- FONCTION DE SATURATION (DISTORTION) --- */
+function createDistortionCurve(amount = 50) {
+    let n_samples = 44100, curve = new Float32Array(n_samples);
+    let deg = Math.PI / 180;
+    for (let i = 0 ; i < n_samples; ++i ) {
+        let x = i * 2 / n_samples - 1;
+        // Algorithme de distorsion non-linéaire
+        curve[i] = ( 3 + amount ) * x * 20 * deg / ( Math.PI + amount * Math.abs(x) );
+    }
+    return curve;
+}
+
+const distortionNode = audioCtx.createWaveShaper();
+distortionNode.curve = createDistortionCurve(400); // 400 = Très sale
+distortionNode.connect(masterGain);
+
+/* --- NOUVELLE FONCTION PLAY AVEC GRABUGE --- */
+function playSynthNote(frequency, duration = 0.2) {
     if (!frequency || frequency <= 0) return;
 
     const osc = audioCtx.createOscillator();
+    const sub = audioCtx.createOscillator(); // Un deuxième oscillateur pour le corps
     const filter = audioCtx.createBiquadFilter();
     const vca = audioCtx.createGain();
 
-    osc.type = 'sawtooth'; // Onde en dent de scie pour le punch
+    // Configuration des oscillateurs
+    osc.type = 'sawtooth'; 
     osc.frequency.setValueAtTime(frequency, audioCtx.currentTime);
+    
+    sub.type = 'square'; // Carré pour plus de "gras" indus
+    sub.frequency.setValueAtTime(frequency / 2, audioCtx.currentTime); // Une octave en dessous
 
+    // Filtre de caractère (Acid/Resonant)
     filter.type = 'lowpass';
-    // Enveloppe de filtre : le filtre s'ouvre vite et se ferme
-    filter.frequency.setValueAtTime(frequency * 2, audioCtx.currentTime);
-    filter.frequency.exponentialRampToValueAtTime(frequency * 0.5, audioCtx.currentTime + duration);
-    filter.Q.value = 5; // Un peu de résonance pour le "Twang"
+    filter.Q.value = 12; // Grosse résonance qui siffle
+    filter.frequency.setValueAtTime(frequency * 4, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(frequency * 0.8, audioCtx.currentTime + duration);
 
+    // Chainage : Osc -> Filter -> VCA -> Distortion -> Master
     osc.connect(filter);
+    sub.connect(filter);
     filter.connect(vca);
-    vca.connect(masterGain); 
+    vca.connect(distortionNode); // On passe dans la machine à grabuge !
 
-    // Enveloppe d'amplitude (Volume)
+    // Enveloppe de volume percutante
     vca.gain.setValueAtTime(0, audioCtx.currentTime);
-    vca.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.01);
+    vca.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.01);
     vca.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
 
-    osc.start();
+    osc.start(); sub.start();
     osc.stop(audioCtx.currentTime + duration);
+    sub.stop(audioCtx.currentTime + duration);
 }
 // Branchement sur l'horloge globale (On va devoir modifier runTick dans drums.js)
 function checkSynthTick(step) {
