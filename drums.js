@@ -220,6 +220,7 @@ function runTick() {
     const allPads = document.querySelectorAll('#grid-seq1 .step-pad');
     allPads.forEach(p => p.style.borderColor = "#333");
     if (allPads[currentStep]) allPads[currentStep].style.borderColor = "#ffffff";
+   if (typeof checkSynthTick === "function") checkSynthTick(currentStep);
 
     if (drumSequences[0][currentStep]) playKick();
     if (drumSequences[1][currentStep]) playSnare();
