@@ -1,5 +1,5 @@
 /* ==========================================
-   HARDBEAT PRO - DRUM ENGINE (drums.js)
+   HARDBEAT PRO - FULL ENGINE (drums.js)
    ========================================== */
 
 // 1. MOTEUR AUDIO & VARIABLES GLOBALES
@@ -21,7 +21,7 @@ let snareSettings = { snappy: 1, tone: 1000, level: 0.6 };
 let hhSettings = { tone: 8000, decayClose: 0.05, decayOpen: 0.3, levelClose: 0.4, levelOpen: 0.5 };
 let fmSettings = { carrierPitch: 100, modPitch: 50, fmAmount: 100, decay: 0.3, level: 0.5 };
 
-// 2. FONCTIONS DE GÉNÉRATION UI (Partagées)
+// 2. FONCTIONS DE GÉNÉRATION UI
 function generateSteps(containerId, className) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -61,7 +61,7 @@ function generateFaders(containerId) {
 function playKick() {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    osc.connect(gain); gain.connect(masterGain); // Master!
+    osc.connect(gain); gain.connect(masterGain); 
     osc.frequency.setValueAtTime(kickSettings.pitch, audioCtx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + kickSettings.decay);
     gain.gain.setValueAtTime(kickSettings.level, audioCtx.currentTime);
@@ -79,7 +79,7 @@ function playSnare() {
     filter.type = 'highpass';
     filter.frequency.setValueAtTime(snareSettings.tone, audioCtx.currentTime);
     const gain = audioCtx.createGain();
-    noiseSource.connect(filter); filter.connect(gain); gain.connect(masterGain); // Master!
+    noiseSource.connect(filter); filter.connect(gain); gain.connect(masterGain);
     gain.gain.setValueAtTime(snareSettings.level, audioCtx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2 * snareSettings.snappy);
     noiseSource.start(); noiseSource.stop(audioCtx.currentTime + 0.2);
@@ -95,7 +95,7 @@ function playHiHat(isOpen) {
     filter.type = 'highpass';
     filter.frequency.setValueAtTime(hhSettings.tone, audioCtx.currentTime);
     const gain = audioCtx.createGain();
-    noiseSource.connect(filter); filter.connect(gain); gain.connect(masterGain); // Master!
+    noiseSource.connect(filter); filter.connect(gain); gain.connect(masterGain);
     const duration = isOpen ? hhSettings.decayOpen : hhSettings.decayClose;
     const level = isOpen ? hhSettings.levelOpen : hhSettings.levelClose;
     gain.gain.setValueAtTime(level, audioCtx.currentTime);
@@ -112,7 +112,7 @@ function playDrumFM() {
     modGain.gain.value = fmSettings.fmAmount;
     carrier.frequency.value = fmSettings.carrierPitch;
     modulator.connect(modGain); modGain.connect(carrier.frequency);
-    carrier.connect(mainGain); mainGain.connect(masterGain); // Master!
+    carrier.connect(mainGain); mainGain.connect(masterGain);
     mainGain.gain.setValueAtTime(fmSettings.level, audioCtx.currentTime);
     mainGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + fmSettings.decay);
     carrier.start(); modulator.start();
@@ -185,18 +185,17 @@ function generateDrumControls() {
                 <div class="group"><label>DECAY</label><input type="range" id="hho-decay" min="0.1" max="0.8" step="0.05" value="0.3"></div>
                 <div class="group"><label>LEVEL</label><input type="range" id="hho-level" min="0" max="1" step="0.1" value="0.5"></div>
             </div>
-            <div id="params-track-4" class="instr-params" style="display:none; gap:10px; align-items:center;">
+            <div id="params-track-4" class="instr-params" style="display:none; gap:5px; align-items:center;">
                 <span style="font-size:9px; color:var(--accent-color); font-weight:bold;">DRUM FM ></span>
-                <div class="group"><label>CARRIER</label><input type="range" id="fm-carrier" min="20" max="1000" value="100"></div>
-                <div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50"></div>
-                <div class="group"><label>FM AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100"></div>
-                <div class="group"><label>DECAY</label><input type="range" id="fm-decay" min="0.05" max="1.5" step="0.05" value="0.3"></div>
-                <div class="group"><label>LEVEL</label><input type="range" id="fm-level" min="0" max="1" step="0.1" value="0.5"></div>
+                <div class="group"><label>CARRIER</label><input type="range" id="fm-carrier" min="20" max="1000" value="100" style="width:50px;"></div>
+                <div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50" style="width:50px;"></div>
+                <div class="group"><label>FM AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100" style="width:50px;"></div>
+                <div class="group"><label>DECAY</label><input type="range" id="fm-decay" min="0.05" max="1.5" step="0.05" value="0.3" style="width:50px;"></div>
+                <div class="group"><label>LEVEL</label><input type="range" id="fm-level" min="0" max="1" step="0.1" value="0.5" style="width:50px;"></div>
             </div>
         </div>`;
     container.insertAdjacentHTML('beforeend', html);
 
-    // Écouteurs
     document.getElementById('kick-pitch').oninput = (e) => kickSettings.pitch = parseFloat(e.target.value);
     document.getElementById('kick-decay').oninput = (e) => kickSettings.decay = parseFloat(e.target.value);
     document.getElementById('snare-snappy').oninput = (e) => snareSettings.snappy = parseFloat(e.target.value);
@@ -212,6 +211,18 @@ function generateDrumControls() {
     document.getElementById('fm-level').oninput = (e) => fmSettings.level = parseFloat(e.target.value);
 }
 
+function initFaderLogic(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.querySelectorAll('.freq-fader').forEach(fader => {
+        fader.addEventListener('input', (e) => {
+            const label = e.target.previousElementSibling;
+            label.innerText = e.target.value + "Hz";
+            label.style.color = "#00f3ff";
+        });
+    });
+}
+
 // 6. INITIALISATION & CLICS
 window.onload = () => {
     generateSteps('grid-seq1', 'step-pad');
@@ -220,10 +231,30 @@ window.onload = () => {
     generateDrumControls();
     setupTempoDrag('display-bpm1');
     setupTempoDrag('display-bpm2');
+    initFaderLogic('grid-freq-seq2');
     document.querySelectorAll('.track-btn').forEach((btn, i) => btn.dataset.track = i);
     
-    // Master Volume Hook
+    // Master Volume
     document.getElementById('master-volume').oninput = (e) => masterGain.gain.value = e.target.value;
+
+    // Réparation du bouton d'extension
+    const addSeqBtn = document.getElementById('add-seq-btn');
+    if (addSeqBtn) {
+        addSeqBtn.addEventListener('click', () => {
+            if (document.getElementById('seq3-container')) return;
+            const seq2 = document.getElementById('seq2-container');
+            const seq3 = seq2.cloneNode(true);
+            seq3.id = 'seq3-container';
+            seq3.querySelector('h2').innerText = 'SEQ 3 : FREQ SYNTH (LAYER)';
+            seq3.querySelector('.freq-sliders-container').id = 'grid-freq-seq3';
+            seq3.querySelector('.step-grid').id = 'grid-seq3';
+            document.getElementById('extension-zone').appendChild(seq3);
+            generateSteps('grid-seq3', 'step-pad');
+            generateFaders('grid-freq-seq3');
+            initFaderLogic('grid-freq-seq3');
+            addSeqBtn.disabled = true; addSeqBtn.style.opacity = "0.5";
+        });
+    }
 };
 
 document.addEventListener('click', (e) => {
