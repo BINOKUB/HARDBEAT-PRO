@@ -54,3 +54,30 @@ function checkSynthTick(step) {
         }
     }
 }
+
+// Écouteur global pour les clics sur les séquenceurs de synthé
+document.addEventListener('click', (e) => {
+    const pad = e.target.closest('.step-pad');
+    if (!pad) return;
+
+    const container = pad.parentElement;
+    const stepIndex = parseInt(pad.dataset.index);
+
+    // Si on clique sur le SEQ 2
+    if (container.id === 'grid-seq2') {
+        synthSequences.seq2[stepIndex] = !synthSequences.seq2[stepIndex];
+        pad.classList.toggle('active');
+        const led = pad.querySelector('.led');
+        led.style.background = synthSequences.seq2[stepIndex] ? "#00f3ff" : "#330000";
+        led.style.boxShadow = synthSequences.seq2[stepIndex] ? "0 0 10px #00f3ff" : "none";
+    }
+
+    // Si on clique sur le SEQ 3 (Extension)
+    if (container.id === 'grid-seq3') {
+        synthSequences.seq3[stepIndex] = !synthSequences.seq3[stepIndex];
+        pad.classList.toggle('active');
+        const led = pad.querySelector('.led');
+        led.style.background = synthSequences.seq3[stepIndex] ? "#7000ff" : "#330000";
+        led.style.boxShadow = synthSequences.seq3[stepIndex] ? "0 0 10px #7000ff" : "none";
+    }
+});
