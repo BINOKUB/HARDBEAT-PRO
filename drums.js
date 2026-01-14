@@ -88,10 +88,19 @@ function generateSteps(containerId, className) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = ''; 
+    
     for (let i = 0; i < stepsPerPage; i++) {
         const step = document.createElement('div');
         step.classList.add(className);
         step.dataset.index = i;
+
+        // On ajoute le numéro uniquement pour les drums (SEQ 1)
+        if (containerId === 'grid-seq1') {
+            const num = document.createElement('span');
+            num.innerText = i + 1;
+            step.appendChild(num); // Ton CSS s'occupe de la couleur et du placement
+        }
+
         const led = document.createElement('div');
         led.classList.add('led');
         step.appendChild(led);
