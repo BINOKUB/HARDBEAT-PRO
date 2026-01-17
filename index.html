@@ -3,106 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HARDBEAT PRO | BINOKUB Synthesis</title>
-    <link rel="stylesheet" href="style.css">
+    <title>HARDBEAT PRO | TECHNO WORKSTATION</title>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --text-color: #ccc;
+            --accent-cyan: #00f3ff;
+            --accent-purple: #a855f7;
+            --panel-bg: #111;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 800px;
+            padding: 40px;
+            background: var(--panel-bg);
+            border: 1px solid #333;
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
+            border-radius: 4px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0 0 10px 0;
+            color: #fff;
+            letter-spacing: -2px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+
+        h2 {
+            font-size: 1rem;
+            color: var(--accent-purple);
+            margin-bottom: 40px;
+            font-weight: normal;
+            letter-spacing: 2px;
+        }
+
+        .btn-launch {
+            display: inline-block;
+            background: transparent;
+            color: var(--accent-cyan);
+            border: 2px solid var(--accent-cyan);
+            padding: 20px 40px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+            margin-bottom: 30px;
+        }
+
+        .btn-launch:hover {
+            background: var(--accent-cyan);
+            color: #000;
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.6);
+            transform: scale(1.05);
+        }
+
+        .resources {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            border-top: 1px solid #333;
+            padding-top: 20px;
+        }
+
+        .res-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+            border: 1px solid #333;
+            padding: 10px 20px;
+            transition: 0.2s;
+        }
+
+        .res-link:hover {
+            color: #fff;
+            border-color: #fff;
+            background: #222;
+        }
+
+        /* Video Preview Style */
+        .video-container {
+            margin: 20px 0;
+            border: 1px solid #333;
+        }
+        
+        video {
+            width: 100%;
+            max-width: 600px;
+            display: block;
+        }
+
+    </style>
 </head>
 <body>
 
-    <main id="rack-container">
-        <header id="master-control">
-            <div class="logo">HARDBEAT PRO</div>
-            <button id="master-play-stop">PLAY / STOP</button>
-            <div class="master-volume">
-                <label>MASTER VOL</label>
-                <input type="range" id="master-gain" min="0" max="1" step="0.01">
-            </div>
-        </header>
+    <div class="container">
+        <h1>HARDBEAT PRO</h1>
+        <h2>BROWSER BASED TECHNO WORKSTATION</h2>
 
-        <section id="seq1-container" class="rack-section">
-            <div class="section-header">
-                <h2>SEQ 1 : DRUM ENGINE</h2>
-                <div class="bpm-control">
-                    <label>TEMPO 1</label>
-                    <div id="knob-bpm1" class="knob"></div>
-                    <span id="display-bpm1">120</span> BPM
-                </div>
-            </div>
+        <div class="video-container">
+            <video controls poster="">
+                <source src="SAMPLE-4-RECETTE.mp4" type="video/mp4">
+                Votre navigateur ne supporte pas la vidéo.
+            </video>
+        </div>
 
-            <div class="track-selectors">
-                <button class="track-btn active" data-track="0">KIK</button>
-                <button class="track-btn" data-track="1">SNARE</button>
-                <button class="track-btn" data-track="2">HH-CLOSE</button>
-                <button class="track-btn" data-track="3">HH-OPEN</button>
-                <button class="track-btn" data-track="4">FM-DRUM</button>
-            </div>
+        <a href="HARDBEAT-PRO.html" class="btn-launch">
+            START ENGINE
+        </a>
 
-            <div class="step-grid" id="grid-seq1">
-                </div>
-
-            <div class="page-selectors">
-                <button class="page-btn active" data-page="0">PAGE 1</button>
-                <button class="page-btn" data-page="1">PAGE 2</button>
-                <button class="page-btn" data-page="2">PAGE 3</button>
-                <button class="page-btn" data-page="3">PAGE 4</button>
-            </div>
-        </section>
-
-        <section id="seq2-container" class="rack-section synth-instance" data-id="2">
-            <div class="section-header">
-                <h2>SEQ 2 : FREQ SYNTH</h2>
-                <div class="bpm-control">
-                    <label>TEMPO 2</label>
-                    <div id="knob-bpm2" class="knob"></div>
-                    <span id="display-bpm2">122</span> BPM
-                </div>
-            </div>
-
-            <div class="freq-sliders-container" id="grid-freq-seq2"></div>
-            <div class="step-grid" id="grid-seq2"></div>
-            
-            <div class="synth-controls">
-                <div class="random-unit">
-                    <button class="btn-random">RANDOMIZE</button>
-                    <label>64 PAS <input type="checkbox" class="check-random-64"></label>
-                </div>
-                </div>
-        </section>
-
-        <div id="synth-global-params" class="instr-params" style="display:flex; gap:20px; background:#111; padding:10px; border:1px solid #333; margin-top:10px;">
-    <span style="font-size:9px; color:#00f3ff; font-weight:bold;">SYNTH MASTER ></span>
-    <div class="group">
-        <label>DISTORTION</label>
-        <input type="range" id="synth-disto" min="0" max="1000" value="400">
+        <div class="resources">
+            <a href="MANUEL.pdf" target="_blank" class="res-link">📄 TÉLÉCHARGER LE MANUEL (PDF)</a>
+            <a href="#" class="res-link" onclick="alert('Version 1.0 Stable - Jan 2026')">ℹ️ VERSION INFO</a>
+        </div>
     </div>
-    <div class="group">
-        <label>RESONANCE</label>
-        <input type="range" id="synth-res" min="1" max="25" value="12">
-    </div>
-    <div class="group">
-        <label>CUTOFF ENV</label>
-        <input type="range" id="synth-cutoff" min="1" max="10" step="0.1" value="4">
-    </div>
-<div class="group">
-        <label>DELAY AMT</label>
-        <input type="range" id="synth-delay-amt" min="0" max="0.8" step="0.05" value="0.3">
-    </div>
-    <div class="group">
-        <label>DELAY TIME</label>
-        <input type="range" id="synth-delay-time" min="0.1" max="1" step="0.05" value="0.375">
-    </div>
-            
-</div>
-        
-        <div id="extension-zone"></div>
-
-        <footer id="ui-footer">
-            <button id="add-seq-btn">+ EXTEND TO SEQ 3 (HARDGROOVE LAYER)</button>
-        </footer>
-      
-    </main>
-
-    <script src="drums.js"></script>
-    <script src="synth.js"></script>
 
 </body>
 </html>
