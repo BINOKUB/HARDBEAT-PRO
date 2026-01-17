@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HARDBEAT PRO | SMART RANDOM</title>
+    <link rel="stylesheet" href="HARDBEAT_style.css">
+</head>
+<body>
+
+    <main id="rack-container">
+        <header id="master-control">
+            <div class="logo">HARDBEAT PRO</div>
+            
+            <div class="memory-bank">
+                <span class="help-tip" data-text="Sauvegardez vos patterns (SAVE + Slot) ou effacez tout (CLR). Les slots verts contiennent des données.">?</span>
+                <button id="btn-clear-all" class="btn-mem-action" title="Clear All Patterns">CLR</button>
+                <div style="width:1px; height:15px; background:#333; margin:0 5px;"></div>
+                <button id="btn-save-mode" class="btn-mem-action">SAVE</button>
+                <div class="slots-group">
+                    <button class="btn-mem-slot" data-slot="1">1</button>
+                    <button class="btn-mem-slot" data-slot="2">2</button>
+                    <button class="btn-mem-slot" data-slot="3">3</button>
+                    <button class="btn-mem-slot" data-slot="4">4</button>
+                </div>
+            </div>
+
+            <button id="master-play-stop">PLAY / STOP</button>
+            
+            <div class="master-volume">
+                <label>MASTER VOL</label>
+                <input type="range" id="master-gain" min="0" max="1" step="0.01" value="0.5">
+            </div>
+        </header>
+
+        <section id="seq1-container" class="rack-section">
+            <div class="section-header">
+                <h2>SEQ 1 : DRUM ENGINE</h2>
+                <span class="help-tip" data-text="Séquenceur polyrythmique. Utilisez le Swing pour le groove et le slider ACCENT (orange) pour la dynamique.">?</span>
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <div class="bpm-control" style="border-right:1px solid #333; padding-right:15px;">
+                        <label style="cursor:pointer; color:#00f3ff;">
+                            CLICK <input type="checkbox" id="metro-toggle" style="vertical-align:middle;">
+                        </label>
+                    </div>
+                    <div class="bpm-control" style="border-right:1px solid #333; padding-right:15px;">
+                        <label>SWING</label>
+                        <input type="range" id="global-swing" min="0" max="50" value="6" style="width:60px; height:4px;">
+                        <span id="swing-val" style="font-size:10px; color:#888;">6%</span>
+                    </div>
+                    <div class="bpm-control">
+                        <label>TEMPO 1</label>
+                        <span id="display-bpm1">120</span> BPM
+                    </div>
+                </div>
+            </div>
+
+            <div class="track-selectors">
+                <div class="track-unit">
+                    <div class="ms-group">
+                        <div class="track-controls-col">
+                        <button class="btn-mute" data-track="0" title="Mute">M</button>
+                        <button class="btn-solo" data-track="0" title="Solo">S</button>
+                        <button class="btn-drum-rand" data-track="0" title="Smart Random">R</button>
+                            <span class="help-tip" data-text="Smart Random. Génère un rythme intelligent adapté à l'instrument.">?</span></div>
+                    </div>
+                    <button class="track-btn active" data-track="0">KIK</button>
+                </div>
+
+                <div class="track-unit">
+                    <div class="ms-group">
+                        <button class="btn-mute" data-track="1">M</button>
+                        <button class="btn-solo" data-track="1">S</button>
+                        <button class="btn-drum-rand" data-track="1">R</button>
+                    </div>
+                    <button class="track-btn" data-track="1">SNR</button>
+                </div>
+
+                <div class="track-unit">
+                    <div class="ms-group">
+                        
+                        <button class="btn-mute" data-track="2">M</button>
+                        <button class="btn-solo" data-track="2">S</button>
+                        <button class="btn-drum-rand" data-track="2">R</button>
+                        
+                    </div>
+                    <button class="track-btn" data-track="2">HHC</button>
+                </div>
+
+                <div class="track-unit">
+                    <div class="ms-group">
+                        <button class="btn-mute" data-track="3">M</button>
+                        <button class="btn-solo" data-track="3">S</button>
+                        <button class="btn-drum-rand" data-track="3">R</button>
+                    </div>
+                    <button class="track-btn" data-track="3">HHO</button>
+                </div>
+
+                <div class="track-unit">
+                    <div class="ms-group">
+                        <button class="btn-mute" data-track="4">M</button>
+                        <button class="btn-solo" data-track="4">S</button>
+                        <button class="btn-drum-rand" data-track="4">R</button>
+                    </div>
+                    <button class="track-btn" data-track="4">FM</button>
+                </div>
+                
+                <div id="instruments-params-container">
+                    <div id="params-track-0" class="instr-params" style="display:flex;">
+                        <span class="label-cyan">KIK &gt;</span>
+                        <div class="group"><label>STEPS</label><input type="range" id="kick-steps" min="1" max="16" value="16" class="step-slider"></div>
+                        <div class="group"><label>PITCH</label><input type="range" id="kick-pitch" min="50" max="300" value="150"></div>
+                        <div class="group"><label>DECAY</label><input type="range" id="kick-decay" min="0.1" max="1" step="0.1" value="0.5"></div>
+                        <div class="group"><label>LEVEL</label><input type="range" id="kick-level" min="0" max="1" step="0.1" value="0.8"></div>
+                    </div>
+                    <div id="params-track-1" class="instr-params" style="display:none;">
+                        <span class="label-cyan">SNR &gt;</span>
+                        <div class="group"><label>STEPS</label><input type="range" id="snare-steps" min="1" max="16" value="16" class="step-slider"></div>
+                        <div class="group"><label>SNAP</label><input type="range" id="snare-snappy" min="0.1" max="2" step="0.1" value="1"></div>
+                        <div class="group"><label>TONE</label><input type="range" id="snare-tone" min="500" max="5000" step="100" value="1000"></div>
+                        <div class="group"><label>LEVEL</label><input type="range" id="snare-level" min="0" max="1" step="0.1" value="0.6"></div>
+                    </div>
+                    <div id="params-track-2" class="instr-params" style="display:none;">
+                        <span class="label-cyan">HHC &gt;</span>
+                        <div class="group"><label>STEPS</label><input type="range" id="hhc-steps" min="1" max="16" value="16" class="step-slider"></div>
+                        <div class="group"><label>TONE</label><input type="range" id="hhc-tone" min="4000" max="12000" step="100" value="8000"></div>
+                        <div class="group"><label>LEVEL</label><input type="range" id="hhc-level" min="0" max="1" step="0.1" value="0.4"></div>
+                    </div>
+                    <div id="params-track-3" class="instr-params" style="display:none;">
+                        <span class="label-cyan">HHO &gt;</span>
+                        <div class="group"><label>STEPS</label><input type="range" id="hho-steps" min="1" max="16" value="16" class="step-slider"></div>
+                        <div class="group"><label>DECAY</label><input type="range" id="hho-decay" min="0.1" max="0.8" step="0.05" value="0.3"></div>
+                        <div class="group"><label>LEVEL</label><input type="range" id="hho-level" min="0" max="1" step="0.1" value="0.5"></div>
+                    </div>
+                    <div id="params-track-4" class="instr-params" style="display:none;">
+                        <span class="label-cyan">FM &gt;</span>
+                        <div class="group"><label>STEPS</label><input type="range" id="fm-steps" min="1" max="16" value="16" class="step-slider"></div>
+                        <div class="group"><label>CARR</label><input type="range" id="fm-carrier" min="20" max="1000" value="100"></div>
+                        <div class="group"><label>MOD</label><input type="range" id="fm-mod" min="1" max="1000" value="50"></div>
+                        <div class="group"><label>AMT</label><input type="range" id="fm-amt" min="0" max="2000" value="100"></div>
+                        <div class="group"><label>DECAY</label><input type="range" id="fm-decay" min="0.05" max="1.5" step="0.05" value="0.3"></div>
+                        <div class="group"><label>LEVEL</label><input type="range" id="fm-level" min="0" max="1" step="0.1" value="0.5"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="drum-rack-row" style="display:flex; align-items:flex-start; justify-content:center; gap:15px; margin-top:10px;">
+                <div class="step-grid" id="grid-seq1"></div>
+                <div class="accent-control-unit">
+                    <label>ACCENT</label>
+                    <input type="range" id="global-accent-amount" min="1.1" max="2.5" step="0.1" value="1.4" orient="vertical">
+                    <span id="accent-val-display" style="font-size:9px; color:#ffaa00; margin-top:5px; font-family:'Courier New';">1.4x</span>
+                </div>
+            </div>
+
+            <div class="page-selectors">
+                <button class="page-btn active" data-page="0">PAGE 1</button>
+            </div>
+        </section>
+
+        <section id="seq2-container" class="rack-section synth-instance" data-id="2">
+            <div class="section-header">
+                <h2>SEQ 2 : FREQ SYNTH (LEAD)</h2>
+                <span class="help-tip" data-text="Synthétiseur FM/Disto. Dessinez votre mélodie avec les faders. Utilisez [R] pour une génération intelligente.">?</span>
+                <div style="display:flex; gap:20px; align-items:center;">
+                    <div class="bpm-control">
+                        <label>VOL</label>
+                        <input type="range" id="vol-seq2" min="0" max="1" step="0.01" value="0.6" style="width:60px">
+                    </div>
+                    <div class="bpm-control">
+                        <label>TEMPO 2</label>
+                        <span id="display-bpm2">122</span> BPM
+                    </div>
+                </div>
+            </div>
+            
+            <div class="synth-master-fixed" style="margin-bottom:15px;">
+                <span class="label-cyan">SEQ 2 PARAM ></span>
+                <div class="group"><label>DISTO</label><input type="range" id="synth2-disto" min="0" max="1000" value="0"></div>
+                <div class="group"><label>RES</label><input type="range" id="synth2-res" min="1" max="25" value="5"></div>
+                <div class="group"><label>CUTOFF</label><input type="range" id="synth2-cutoff" min="1" max="10" step="0.1" value="4"></div>
+                <div class="group"><label>DECAY</label><input type="range" id="synth2-decay" min="0.1" max="1.0" step="0.05" value="0.2"></div>
+                <div class="group" style="border-left:1px solid #444; padding-left:10px;"><label>DELAY AMT</label><input type="range" id="global-delay-amt" min="0" max="0.8" step="0.05" value="0"></div>
+                <div class="group"><label>DELAY TIME</label><input type="range" id="global-delay-time" min="0.1" max="1" step="0.05" value="0.375"></div>
+            </div>
+
+            <div class="freq-sliders-container" id="grid-freq-seq2"></div>
+            <div class="step-grid" id="grid-seq2"></div>
+            
+            <div class="synth-controls" style="display:flex; gap:10px; margin-top:10px; align-items:center;">
+                <button id="btn-mute-seq2" class="btn-synth-mute" data-target="2">MUTE SEQ 2</button>
+                <div class="random-unit">
+                    <button class="btn-random" data-target="2">RANDOMIZE SEQ 2</button>
+                </div>
+            </div>
+        </section>
+        
+        <div id="extension-zone"></div>
+        <footer id="ui-footer"><button id="add-seq-btn">+ EXTEND TO SEQ 3 (HARDGROOVE LAYER)</button></footer>
+    </main>
+
+    <script src="HARDBEAT_core_audio.js"></script>
+    <script src="HARDBEAT_ui_logic.js"></script>
+</body>
+</html>
