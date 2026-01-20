@@ -153,16 +153,6 @@ h2 { margin: 0; font-size: 14px; text-transform: uppercase; color: #888; letter-
 .fader-unit { display: flex; flex-direction: column; align-items: center; height: 160px; }
 .freq-fader { appearance: slider-vertical; width: 12px; height: 130px; background: #222; cursor: ns-resize; }
 
-/* LE CHANGEMENT EST ICI : CLAIR ET NEON */
-.hz-label { 
-    font-size:18px important!; 
-   font-weight:bold;
-    color: var(--accent-color); /* Cyan */
-    margin-bottom: 5px; 
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    text-shadow: 0 0 5px rgba(0, 243, 255, 0.4); /* Petite lueur */
-}
 
 /* --- SYNTH MASTER --- */
 .synth-master-fixed {
@@ -203,8 +193,13 @@ h2 { margin: 0; font-size: 14px; text-transform: uppercase; color: #888; letter-
 /* --- FADERS & HZ LABELS (NEON) --- */
 .fader-unit { display: flex; flex-direction: column; align-items: center; height: 160px; }
 .freq-fader { appearance: slider-vertical; width: 12px; height: 130px; background: #222; cursor: ns-resize; }
+
+
+/* changement des nombre hz */
 .hz-label { 
-    font-size: 9px; color: var(--accent-color); margin-bottom: 5px; 
+   font-size:14px important!; 
+   font-weight:bold important!;
+    color: var(--accent-color); margin-bottom: 5px; 
     font-family: 'Courier New', monospace; font-weight: bold;
     text-shadow: 0 0 5px rgba(0, 243, 255, 0.4);
 }
