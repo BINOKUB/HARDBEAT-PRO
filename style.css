@@ -350,7 +350,7 @@ body { background-color: var(--bg-color); color: #e0e0e0; font-family: 'Segoe UI
 .track-btn.active { border-color: var(--accent-color); color: var(--accent-color); background: #002a2d; }
 .page-btn { background: #222; border: 1px solid #444; color: #888; padding: 5px 12px; font-size: 11px; cursor: pointer; }
 .fader-unit { display: flex; flex-direction: column; align-items: center; height: 160px; }
-.freq-fader { appearance: slider-vertical; width: 12px; height: 130px; background: #222; cursor: ns-resize; }
+.freq-fader { appearance: slider-vertical; width: 12px; height: 130px; background: #222; cursor: ns-resize; font-size:14px; font-weight:bold; }
 .hz-label { font-size: 9px; color: var(--accent-color); margin-bottom: 5px; font-family: 'Courier New'; font-weight: bold; text-shadow: 0 0 5px rgba(0, 243, 255, 0.4); }
 .synth-master-fixed { display: flex; gap: 20px; background: #111; padding: 10px; border: 1px solid #333; margin-top: 10px; align-items: center; border-radius: 4px; }
 .synth-master-fixed .group label { font-size: 9px; color: #888; text-transform: uppercase; }
