@@ -155,7 +155,7 @@ h2 { margin: 0; font-size: 14px; text-transform: uppercase; color: #888; letter-
 
 /* LE CHANGEMENT EST ICI : CLAIR ET NEON */
 .hz-label { 
-    font-size: 14px; 
+    font-size:18px; 
    font-weight:bold;
     color: var(--accent-color); /* Cyan */
     margin-bottom: 5px; 
