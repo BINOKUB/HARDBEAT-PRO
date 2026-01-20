@@ -567,29 +567,3 @@ body { background-color: var(--bg-color); color: #e0e0e0; font-family: 'Segoe UI
     margin-left: 0 !important; /* Force le centrage (annule la marge précédente) */
 }
 
-/* =========================================
-   MISE À JOUR VISIBILITÉ (BIG FONTS)
-   ========================================= */
-
-/* Agrandir les NOMS des paramètres (ex: "CUTOFF", "RES", "DIST") */
-.control-label, .param-label, .knob-label {
-    font-size: 14px !important;  /* Augmente ce chiffre si besoin (ex: 16px) */
-    font-weight: bold !important;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 5px; /* Un peu d'espace sous le texte */
-    color: #ffffff !important; /* Blanc pur pour le contraste */
-}
-
-/* Agrandir les VALEURS des paramètres (les chiffres qui bougent) */
-.control-value, .param-value, .knob-value {
-    font-size: 18px !important; /* Gros chiffres */
-    font-family: 'Courier New', monospace; /* Police style "Machine" */
-    color: #00f3ff !important; /* Cyan Néon pour bien lire */
-    font-weight: bold;
-}
-
-/* Si tu as des cases à cocher ou petits textes sous les switchs */
-.switch-label {
-    font-size: 13px !important;
-}
