@@ -567,3 +567,17 @@ body { background-color: var(--bg-color); color: #e0e0e0; font-family: 'Segoe UI
     margin-left: 0 !important; /* Force le centrage (annule la marge précédente) */
 }
 
+
+/* =================================================
+   CORRECTIF FINAL - TAILLE HZ
+   Colle ceci TOUT EN BAS du fichier style.css
+   ================================================= */
+div.hz-label, span.hz-label, .hz-label {
+    font-size: 16px !important;       /* Change ici : 16px, 18px, 20px... */
+    font-weight: 900 !important;      /* Très gras */
+    color: #00f3ff !important;        /* Cyan Néon forcé */
+    font-family: 'Courier New', monospace !important;
+    margin-bottom: 8px !important;    /* Un peu d'espace */
+    display: block !important;        /* Force l'affichage */
+    opacity: 1 !important;
+}
