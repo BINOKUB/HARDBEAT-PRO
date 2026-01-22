@@ -27,21 +27,9 @@
 
             <button id="master-play-stop">PLAY / STOP</button>
             
-           <div style="display:flex; gap:20px; align-items:center; border-left:1px solid #333; padding-left:15px;">
-                
-                <div class="bpm-control">
-                    <label style="color:#ffaa00;">DIRT</label>
-                    <input type="range" min="0" max="100" value="0" step="1" 
-                           oninput="window.updateGlobalDirt(this.value); document.getElementById('dirt-val-display').innerText=this.value+'%'" 
-                           style="width:80px; accent-color:#ffaa00;">
-                    <div id="dirt-val-display" style="text-align:center; font-size:10px; color:#ffaa00;">0%</div>
-                </div>
-
-                <div class="master-volume">
-                    <label>MASTER VOL</label>
-                    <input type="range" id="master-gain" min="0" max="1" step="0.01" value="0.5">
-                </div>
-                
+            <div class="master-volume">
+                <label>MASTER VOL</label>
+                <input type="range" id="master-gain" min="0" max="1" step="0.01" value="0.5">
             </div>
         </header>
 
