@@ -7,20 +7,21 @@ assignees: binokub
 ---
 
 **Description du problème**
-Décrivez clairement ce qui ne fonctionne pas.
+Décrivez simplement ce qui ne fonctionne pas.
 
-**Comment reproduire le bug ?**
-1. Aller sur '...'
-2. Cliquer sur '...'
-3. L'erreur arrive quand...
+**Étapes pour reproduire le bug**
+Aidez-nous à recréer le problème chez nous :
+1. Quelle action avez-vous faite ? (ex: J'ai cliqué sur SAVE, J'ai chargé un fichier JSON...)
+2. Dans quel état était la machine ? (ex: En lecture, À l'arrêt...)
+3. Qu'est-ce qui s'est passé ? (ex: Le son s'est coupé, Le site a figé...)
 
 **Comportement attendu**
-Ce qui aurait dû se passer normalement.
+Ce qui aurait dû se passer normalement (ex: Le fichier aurait dû se télécharger).
+
+**Votre configuration (Important !)**
+ - Appareil : [ex: PC, Mac, Android]
+ - Navigateur : [ex: Chrome, Safari, Firefox]
+ - Version Hardbeat : [ex: V13]
 
 **Capture d'écran (Optionnel)**
-Si vous pouvez, glissez une image ici.
-
-**Votre configuration :**
- - Appareil : [ex: iPhone 13, PC Windows]
- - Navigateur : [ex: Chrome, Safari]
- - Version Hardbeat : [ex: V13]
+Glissez une image ici si vous avez un message d'erreur visuel.
