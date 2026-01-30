@@ -2,7 +2,7 @@
 
 Merci de vouloir participer au développement du séquenceur Techno le plus lourd du web ! 
 
-## 🛠️ Règles de Développement
+##  Règles de Développement
 
 ### 1. Le Moteur Audio (`logic.js`)
 C'est le cœur du réacteur. 
