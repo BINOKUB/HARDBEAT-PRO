@@ -581,3 +581,184 @@ div.hz-label, span.hz-label, .hz-label {
     display: block !important;        /* Force l'affichage */
     opacity: 1 !important;
 }
+
+/* ==========================================
+   NOUVEAUX CONTROLES (64 STEPS)
+   ========================================== */
+
+/* Groupe de longueur (16/32/48/64) */
+.length-btn-group {
+    display: flex;
+    gap: 2px;
+    background: #111;
+    padding: 3px;
+    border: 1px solid #333;
+    border-radius: 4px;
+}
+
+.btn-length {
+    background: #222;
+    border: 1px solid #444;
+    color: #666;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 5px 8px;
+    cursor: pointer;
+    width: 30px;
+    transition: all 0.2s;
+}
+
+.btn-length:hover {
+    color: #fff;
+    border-color: #888;
+}
+
+/* Bouton Actif (Cyan) */
+.btn-length.active {
+    background: #002a2d;
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 5px rgba(0, 243, 255, 0.2);
+}
+
+/* Navigation des Pages (<< 1-16 >>) */
+.page-navigator {
+    background: #000;
+    border: 1px solid #333;
+    padding: 5px 10px;
+    border-radius: 20px; /* Forme de pilule */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-nav {
+    background: transparent;
+    border: 1px solid #444;
+    color: var(--accent-color);
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+}
+
+.btn-nav:hover:not(:disabled) {
+    background: var(--accent-color);
+    color: #000;
+}
+
+.btn-nav:disabled {
+    border-color: #222;
+    color: #333;
+    cursor: default;
+}
+
+.page-indicator {
+    min-width: 40px;
+    text-align: center;
+    font-size: 12px;
+}
+
+/* ==========================================
+   MASTER VOLUME VERTICAL (AJOUT)
+   ========================================== */
+.master-volume {
+    display: flex;
+    flex-direction: column; /* Empile le texte et le slider */
+    align-items: center;
+    justify-content: center;
+    margin-left: 20px;
+    background: #111;
+    padding: 5px 10px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    height: 60px; /* Hauteur fixe compacte */
+}
+
+.master-volume label {
+    margin-bottom: 2px;
+    font-size: 8px; /* Plus petit */
+    color: #888;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.master-volume input[type="range"] {
+    -webkit-appearance: slider-vertical; /* Pour Chrome/Edge */
+    width: 8px;
+    height: 40px; /* Petit fader discret */
+    background: #333;
+    cursor: ns-resize;
+    margin: 0;
+}
+
+/* --- FREQ MEMORY SNAPSHOTS --- */
+.btn-snap-action {
+    width: 20px; height: 20px;
+    background: #330000; color: #ff5555;
+    border: 1px solid #660000;
+    font-size: 10px; font-weight: bold; cursor: pointer;
+}
+.btn-snap-action.saving {
+    background: #ff0000; color: #fff;
+    box-shadow: 0 0 10px #ff0000;
+    animation: blink-save 0.5s infinite;
+}
+
+.btn-snap-slot {
+    width: 20px; height: 20px;
+    background: #222; color: #666;
+    border: 1px solid #444;
+    font-size: 10px; font-weight: bold; cursor: pointer;
+}
+.btn-snap-slot:hover { border-color: #00f3ff; color: #fff; }
+
+.btn-snap-slot.has-data {
+    background: #002233; color: #00f3ff; border-color: #005577;
+}
+
+/* Animation flash quand on charge */
+.flash-load {
+    background: #fff !important; transition: background 0.1s;
+}
+
+/* --- RECORDER BUTTON --- */
+/* --- RECORDER BUTTON (Version Compacte) --- */
+.btn-recorder {
+    width: 35px; /* Était 50px */
+    height: 35px; /* Était 50px */
+    border-radius: 50%;
+    background: #220000;
+    border: 2px solid #550000;
+    color: #888;
+    font-weight: bold;
+    font-size: 9px; /* Plus petit texte */
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: inset 0 0 10px #000;
+    margin-left: 15px; /* Espace avec le Tempo */
+}
+
+.btn-recorder:hover {
+    color: #fff;
+    border-color: #ff0000;
+}
+
+/* ETAT ENREGISTREMENT (ACTIVE) */
+.btn-recorder.recording {
+    background: #ff0000;
+    color: #fff;
+    border-color: #ffaaaa;
+    box-shadow: 0 0 20px #ff0000;
+    animation: pulse-rec 1s infinite;
+}
+
+@keyframes pulse-rec {
+    0% { transform: scale(1); box-shadow: 0 0 20px #ff0000; }
+    50% { transform: scale(0.95); box-shadow: 0 0 5px #ff0000; }
+    100% { transform: scale(1); box-shadow: 0 0 20px #ff0000; }
+}
