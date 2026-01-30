@@ -1,6 +1,6 @@
 # Contribuer à HARDBEAT PRO
 
-Merci de vouloir participer au développement du séquenceur Techno le plus lourd du web ! 🎹
+Merci de vouloir participer au développement du séquenceur Techno le plus lourd du web ! 
 
 ## 🛠️ Règles de Développement
 
