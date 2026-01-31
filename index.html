@@ -107,8 +107,6 @@
 
         .video-card:hover { border-color: var(--cyan); box-shadow: 0 0 15px rgba(0,0,0,0.5); }
         
-        .video-card video { width: 100%; border-radius: 2px; background: #000; }
-        
         .vid-info { padding: 10px 5px 0 5px; }
         .vid-title { font-weight: bold; color: #fff; font-size: 1.1rem; margin-bottom: 5px; }
         .vid-desc { font-size: 0.8rem; color: #888; }
@@ -259,20 +257,23 @@
         
         const myVideos = [
             {
-                titre: "Demo Hardgroove V1",
-                fichier: "TEST.mp4", 
-                desc: "Premier test d'export audio et polyrythmie."
+                // NOUVELLE VIDEO YOUTUBE
+                type: "youtube",
+                id: "R3om_JVmBEM", 
+                titre: "TUTORIEL : POLYRYTHMIE & EXPORT (V13)",
+                desc: "Démonstration officielle : Workflow, Accents, Polyrythmie 3-pas et Export WAV."
             },
             {
-                titre: "4 Recettes Polyrythmiques",
-                fichier: "SAMPLE-4-RECETTE.mp4",
-                desc: "Démonstration des techniques de décalage temporel."
+                // ANCIENNE VIDEO LOCALE
+                type: "local",
+                fichier: "TEST.mp4", 
+                titre: "Demo Hardgroove V1",
+                desc: "Premier test d'export audio et polyrythmie."
             }
-            // Tu peux ajouter d'autres vidéos ici
         ];
 
         /* ========================================================
-           SCRIPT GALERIE
+           SCRIPT GALERIE (HYBRIDE YOUTUBE / LOCAL)
            ======================================================== */
 
         const container = document.getElementById('gallery-container');
@@ -280,11 +281,34 @@
         myVideos.forEach(vid => {
             const card = document.createElement('div');
             card.className = 'video-card';
+            
+            let mediaHTML = '';
+            
+            // Logique de détection
+            if (vid.type === "youtube") {
+                // Création d'un embed responsive pour YouTube
+                mediaHTML = `
+                    <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                        <iframe 
+                            src="https://www.youtube.com/embed/${vid.id}" 
+                            style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border:0;" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                `;
+            } else {
+                // Lecteur vidéo standard HTML5 pour les fichiers locaux
+                mediaHTML = `
+                    <video controls preload="metadata" style="width:100%; border-radius:2px; background:#000;">
+                        <source src="${vid.fichier}" type="video/mp4">
+                        Votre navigateur ne supporte pas la vidéo.
+                    </video>
+                `;
+            }
+
             card.innerHTML = `
-                <video controls preload="metadata">
-                    <source src="${vid.fichier}" type="video/mp4">
-                    Votre navigateur ne supporte pas la vidéo.
-                </video>
+                ${mediaHTML}
                 <div class="vid-info">
                     <div class="vid-title">${vid.titre}</div>
                     <div class="vid-desc">${vid.desc}</div>
