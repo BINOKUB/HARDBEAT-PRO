@@ -1,5 +1,5 @@
 /* ==========================================
-   HARDBEAT PRO - UI LOGIC (V12 - SYNTH ACCENTS SUPPORT)
+   HARDBEAT PRO - UI LOGIC (V14 - FM HZ SUPPORT)
    ========================================== */
 
 let masterTimer; 
@@ -15,8 +15,11 @@ window.drumSequences = Array.from({ length: 5 }, () => Array(64).fill(false));
 window.drumAccents = Array.from({ length: 5 }, () => Array(64).fill(false));
 window.synthSequences = { seq2: Array(64).fill(false), seq3: Array(64).fill(false) };
 
+
 // NOUVEAU : Mémoire pour les accents Synthés (Invisibles mais audibles)
 window.synthAccents = { seq2: Array(64).fill(false), seq3: Array(64).fill(false) };
+// ... Sous window.synthAccents ...
+window.fmFreqData = Array(64).fill(100); // 100Hz par défaut
 
 window.freqDataSeq2 = Array(64).fill(440);
 window.freqDataSeq3 = Array(64).fill(440);
@@ -127,7 +130,6 @@ function setupLengthControls() {
         });
     });
 }
-
 function setupPageNavigation() {
     const p1 = document.getElementById('btn-prev-page-seq1');
     const n1 = document.getElementById('btn-next-page-seq1');
@@ -312,6 +314,85 @@ function initAudioPreview() {
     document.addEventListener('click', (e) => { const pad = e.target.closest('.step-pad'); if (pad && pad.classList.contains('active')) triggerPreview(pad, 'pad'); });
 }
 
+
+// --- GESTION DES FADERS FM (CONTEXTUEL) ---
+function initFMExtension() {
+    // 1. Création du container HTML
+    const grid1 = document.getElementById('grid-seq1');
+    if(!grid1) return;
+    
+    const fmContainer = document.createElement('div');
+    fmContainer.id = 'fm-faders-container';
+    
+    let html = '';
+    for(let i=0; i<16; i++) {
+        html += `
+        <div class="fm-fader-unit">
+            <span class="fm-hz-label">100</span>
+            <input type="range" class="fm-freq-fader" data-index="${i}" min="40" max="400" value="100" step="1">
+        </div>`;
+    }
+    fmContainer.innerHTML = html;
+
+    // --- CORRECTION DU PLACEMENT ---
+    // On l'ajoute à la fin de la section (sous la grille et le slider accent)
+    const section = grid1.closest('.rack-section');
+    section.appendChild(fmContainer); 
+    // -------------------------------
+
+    // 2. Ecouteurs d'événements
+    const faders = fmContainer.querySelectorAll('.fm-freq-fader');
+    faders.forEach(f => {
+        f.oninput = (e) => {
+            const val = parseInt(e.target.value);
+            const idx = parseInt(e.target.dataset.realIndex); 
+            if(!isNaN(idx)) window.fmFreqData[idx] = val;
+            
+            const label = e.target.previousElementSibling;
+            if(label) label.innerText = val;
+        };
+    });
+}
+
+// Fonction pour rafraîchir les valeurs des faders FM (Pagination)
+function refreshFMFaders() {
+    const container = document.getElementById('fm-faders-container');
+    if(!container) return;
+    
+    // On n'affiche le container QUE si on est sur la piste 4 (FM)
+    if(currentTrackIndex === 4) {
+        container.classList.add('visible');
+    } else {
+        container.classList.remove('visible');
+        return; // Pas besoin de calculer si caché
+    }
+
+    const faders = container.querySelectorAll('.fm-freq-fader');
+    const offset = currentPageSeq1 * 16; // Utilise la pagination batterie
+
+    faders.forEach((f, i) => {
+        const realIndex = i + offset;
+        f.dataset.realIndex = realIndex; // Lien avec la mémoire 64 pas
+        
+        // Récupération valeur ou défaut 100Hz
+        const val = window.fmFreqData[realIndex] || 100;
+        f.value = val;
+        
+        const label = f.previousElementSibling;
+        if(label) label.innerText = val;
+        
+        // Désactiver si hors longueur master
+        if(realIndex >= window.masterLength) {
+            f.disabled = true;
+            f.style.opacity = "0.2";
+        } else {
+            f.disabled = false;
+            f.style.opacity = "1";
+        }
+    });
+}
+
+
 /* ==========================================
    MAIN INIT 
    ========================================== */
@@ -321,6 +402,7 @@ window.addEventListener('load', () => {
     if (!window.audioCtx) console.error("ERREUR : audio.js manquant !");
 
     initGrid('grid-seq1'); 
+   initFMExtension();
     initGrid('grid-seq2'); 
     initFaders('grid-freq-seq2', 2);
     
@@ -417,7 +499,7 @@ function triggerDrums() {
             if(i===1 && window.playSnare) window.playSnare(acc);
             if(i===2 && window.playHiHat) window.playHiHat(false, acc);
             if(i===3 && window.playHiHat) window.playHiHat(true, acc);
-            if(i===4 && window.playDrumFM) window.playDrumFM(acc);
+            if(i===4 && window.playDrumFM) window.playDrumFM(acc, pos);
         }
         if (i === 0 && isMetroOn && globalTickCount % 4 === 0) { 
             if(window.playMetronome) window.playMetronome(globalTickCount % 16 === 0); 
@@ -521,6 +603,7 @@ window.refreshGridVisuals = function() {
     };
     updateSynthGrid('seq2', 2, currentPageSeq2);
     if(window.synthSequences.seq3) updateSynthGrid('seq3', 3, currentPageSeq3);
+   refreshFMFaders();
 };
 
 window.refreshFadersVisuals = function(seqId) {
