@@ -83,41 +83,59 @@ window.playMetronome = function(isDownbeat) { const osc = window.audioCtx.create
 window.playKick = function(isAccent) { const osc = window.audioCtx.createOscillator(); const g = window.audioCtx.createGain(); osc.connect(g); g.connect(masterGain); let lvl = window.kickSettings.level; let decayMod = window.kickSettings.decay; if (isAccent) { lvl = Math.min(1.2, lvl * window.globalAccentBoost); decayMod += 0.1; } osc.frequency.setValueAtTime(window.kickSettings.pitch || 150, window.audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(0.01, window.audioCtx.currentTime + decayMod); g.gain.setValueAtTime(lvl, window.audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, window.audioCtx.currentTime + decayMod); osc.start(); osc.stop(window.audioCtx.currentTime + decayMod); }
 window.playSnare = function(isAccent) { const buffer = window.audioCtx.createBuffer(1, window.audioCtx.sampleRate * 0.2, window.audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; const noise = window.audioCtx.createBufferSource(); noise.buffer = buffer; const filt = window.audioCtx.createBiquadFilter(); filt.type = 'highpass'; let baseTone = window.snareSettings.tone || 1000; let lvl = window.snareSettings.level; let snap = window.snareSettings.snappy || 1; if (isAccent) { lvl = Math.min(1.2, lvl * window.globalAccentBoost); baseTone += 200; snap += 0.2; } filt.frequency.value = baseTone; const g = window.audioCtx.createGain(); noise.connect(filt); filt.connect(g); g.connect(masterGain); g.gain.setValueAtTime(lvl, window.audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, window.audioCtx.currentTime + (0.2 * snap)); noise.start(); }
 window.playHiHat = function(isOpen, isAccent) { const buffer = window.audioCtx.createBuffer(1, window.audioCtx.sampleRate * 0.5, window.audioCtx.sampleRate); const data = buffer.getChannelData(0); for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1; const noise = window.audioCtx.createBufferSource(); noise.buffer = buffer; const filt = window.audioCtx.createBiquadFilter(); filt.type = 'highpass'; let tone = window.hhSettings.tone || 8000; let d = isOpen ? (window.hhSettings.decayOpen || 0.3) : (window.hhSettings.decayClose || 0.05); let l = isOpen ? (window.hhSettings.levelOpen || 0.5) : (window.hhSettings.levelClose || 0.4); if (isAccent) { l = Math.min(1.0, l * window.globalAccentBoost); d += 0.05; tone += 500; } filt.frequency.value = tone; const g = window.audioCtx.createGain(); noise.connect(filt); filt.connect(g); g.connect(masterGain); g.gain.setValueAtTime(l, window.audioCtx.currentTime); g.gain.exponentialRampToValueAtTime(0.001, window.audioCtx.currentTime + d); noise.start(); }
+
+
+// --- FONCTION FM MELODIQUE V16 (RATIO LOCK + SCALING) ---
 window.playDrumFM = function(isAccent, stepIndex) {
     const car = window.audioCtx.createOscillator();
     const mod = window.audioCtx.createOscillator();
     const modG = window.audioCtx.createGain();
     const mainG = window.audioCtx.createGain();
 
-    // 1. LOGIQUE DE FRÉQUENCE (P-LOCK)
-    // On récupère la fréquence du Fader pour ce pas précis
+    // 1. FREQUENCE DE BASE (FADER = NOTE)
     let baseFreq = 100;
     if (typeof stepIndex === 'number' && window.fmFreqData && window.fmFreqData[stepIndex]) {
         baseFreq = window.fmFreqData[stepIndex];
     }
 
-    // 2. LOGIQUE DU BOUTON "CARRIER" (TRANSPOSE / RATIO)
-    // Le bouton du haut agit comme un multiplicateur global (Ratio)
-    // Si le bouton est à 100 (défaut), ratio = 1. Si 200, ratio = 2 (Octave au-dessus).
+    // 2. BOUTON "CARR" (TRANSPOSE GLOBALE)
+    // Agit comme un "Master Tune". 100 = Standard.
     const globalKnobVal = window.fmSettings.carrierPitch || 100;
-    const ratio = globalKnobVal / 100; 
+    const transposeRatio = globalKnobVal / 100; 
     
-    const finalFreq = baseFreq * ratio;
+    // Fréquence finale de la note (Porteuse)
+    const finalCarrierFreq = baseFreq * transposeRatio;
 
-    // Reste du code FM standard...
-    mod.frequency.value = window.fmSettings.modPitch || 50;
+    // 3. BOUTON "MOD" (RATIO HARMONIQUE) - LE FIX EST ICI
+    // Le bouton détermine l'intervalle entre les deux osc (Octave, Quinte, etc.)
+    // Au lieu de Hertz fixes, on utilise un Ratio.
+    const modKnobVal = window.fmSettings.modPitch || 50;
+    // 50 = Ratio 1:1 (Son pur). 100 = Ratio 2:1.
+    const modRatio = (modKnobVal + 1) / 50; 
+
+    // Le Modulateur suit la Porteuse -> CA FAIT UNE VRAIE NOTE !
+    const finalModFreq = finalCarrierFreq * modRatio;
+
+    // --- PARAMETRES ---
     let amt = window.fmSettings.fmAmount || 100;
     let lvl = window.fmSettings.level || 0.5;
-    let d = window.fmSettings.decay || 0.3;
+    let decay = window.fmSettings.decay || 0.3;
 
     if (isAccent) {
         lvl = Math.min(1.0, lvl * window.globalAccentBoost);
-        amt += 50;
-        d += 0.1;
+        amt += 50; 
+        decay += 0.1;
     }
 
-    modG.gain.value = amt;
-    car.frequency.value = finalFreq; // On utilise notre fréquence calculée
+    // 4. SCALING DE TEXTURE (Pour garder le gras dans les aigus)
+    // Si on monte dans les aigus, on pousse un peu plus la FM pour garder le grain.
+    const scaling = Math.max(1, finalCarrierFreq / 100); 
+    const finalAmount = amt * scaling;
+
+    modG.gain.value = finalAmount;
+    
+    car.frequency.value = finalCarrierFreq; 
+    mod.frequency.value = finalModFreq; // <--- C'est ici que la magie opère
 
     mod.connect(modG);
     modG.connect(car.frequency);
@@ -125,13 +143,14 @@ window.playDrumFM = function(isAccent, stepIndex) {
     mainG.connect(masterGain);
 
     mainG.gain.setValueAtTime(lvl, window.audioCtx.currentTime);
-    mainG.gain.exponentialRampToValueAtTime(0.001, window.audioCtx.currentTime + d);
+    mainG.gain.exponentialRampToValueAtTime(0.001, window.audioCtx.currentTime + decay);
 
     car.start();
     mod.start();
-    car.stop(window.audioCtx.currentTime + d);
-    mod.stop(window.audioCtx.currentTime + d);
+    car.stop(window.audioCtx.currentTime + decay);
+    mod.stop(window.audioCtx.currentTime + decay);
 };
+
 // --- PLAY SYNTH (UPDATED FOR ACCENTS) ---
 function playSynthNote(freq, volume, seqId, isAccent) {
     if (!freq || freq < 20) return;
