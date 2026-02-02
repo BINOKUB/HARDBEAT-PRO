@@ -1,5 +1,5 @@
 /* ==========================================
-   HARDBEAT PRO - AUDIO ENGINE (V9 - CHORD MODE SEQ 3)
+   HARDBEAT PRO - AUDIO ENGINE (V10 - DETROIT CHORDS)
    ========================================== */
 window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 window.masterGain = window.audioCtx.createGain();
@@ -265,7 +265,7 @@ function playSynthNote(freq, volume, seqId, isAccent) {
 
 // --- PONT TRIGGER (MODIFIÉ POUR ACCORDS SUR SEQ 3) ---
 /* ==========================================
-   MODIF : CHORD MODE (ON/OFF)
+   MODIF : CHORD MODE (ON/OFF) + MAJOR/MINOR
    ========================================== */
 window.playSynthStep = function(stepIndex, freqValue, seqId, isActive, isAccent) {
     if (seqId === 2 && window.isMutedSeq2) return;
@@ -280,10 +280,22 @@ window.playSynthStep = function(stepIndex, freqValue, seqId, isActive, isAccent)
             // SEQ 3 : VÉRIFICATION DU BOUTON CHORD
             if (window.isChordModeSeq3 === true) {
                 // --- MODE ACCORD (ON) ---
+                
+                // NOUVEAU : CHECK MAJEUR / MINEUR
+                // On regarde si le pas a l'attribut "Major" activé
+                let isMajor = false;
+                if (window.chordQualitySeq3 && window.chordQualitySeq3[stepIndex]) {
+                    isMajor = window.chordQualitySeq3[stepIndex];
+                }
+
+                // RATIO TIERCE : 1.2599 (Majeur) ou 1.1892 (Mineur)
+                const thirdRatio = isMajor ? 1.2599 : 1.1892;
+
                 const vol = window.synthVol3 * 0.4; // On baisse un peu le volume cumulé
-                playSynthNote(freqValue, vol, 3, isAccent);            // Note 1
-                playSynthNote(freqValue * 1.1892, vol, 3, isAccent);   // Note 2
-                playSynthNote(freqValue * 1.4983, vol, 3, isAccent);   // Note 3
+                playSynthNote(freqValue, vol, 3, isAccent);            // Note 1 (Fondamentale)
+                playSynthNote(freqValue * thirdRatio, vol, 3, isAccent); // Note 2 (Tierce Maj/Min)
+                playSynthNote(freqValue * 1.4983, vol, 3, isAccent);   // Note 3 (Quinte Juste)
+
             } else {
                 // --- MODE MONO (OFF) - CLASSIQUE ---
                 playSynthNote(freqValue, window.synthVol3, 3, isAccent);
@@ -299,7 +311,7 @@ window.playSynthSound = function(seqId, freq, duration, slide, disto) {
     playSynthNote(freq, vol, seqId, false); 
 };
 
-console.log("AUDIO V9: Chord Mode Activé sur SEQ 3 !");
+console.log("AUDIO V10: Chord Mode Major/Minor Activé sur SEQ 3 !");
 
 // --- VISUALIZER ---
 setTimeout(() => {
