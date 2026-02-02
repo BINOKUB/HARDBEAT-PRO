@@ -1,12 +1,12 @@
 /* ==========================================
-   HARDBEAT PRO - STORAGE ENGINE (V9 - ROBUST LOAD)
+   HARDBEAT PRO - STORAGE ENGINE (V11 - FACTORY LOAD FIX)
    ========================================== */
 
 function initStorageSystem() {
-    console.log("Storage System V9: Ready.");
+    console.log("Storage System V11: Ready.");
     updateMemoryUI(); 
 
-   // GESTION DES PRESETS FACTORY
+    // GESTION DES PRESETS FACTORY
     const presetSelector = document.getElementById('preset-selector');
     if (presetSelector) {
         presetSelector.onchange = (e) => {
@@ -15,7 +15,6 @@ function initStorageSystem() {
                 if(confirm(`Charger le preset "${FACTORY_PRESETS[key].name}" ? \nCela effacera votre travail non sauvegardé.`)) {
                     loadFactoryPreset(key);
                 }
-                // Reset du selecteur visuel
                 e.target.value = ""; 
             }
         };
@@ -85,10 +84,15 @@ function clearAllData() {
     // RESET MEMOIRE
     window.drumSequences = Array.from({ length: 5 }, () => Array(64).fill(false));
     window.drumAccents = Array.from({ length: 5 }, () => Array(64).fill(false));
+    
+    // Reset Synths
     window.synthSequences.seq2 = Array(64).fill(false);
     window.synthSequences.seq3 = Array(64).fill(false);
     window.freqDataSeq2.fill(440);
     window.freqDataSeq3.fill(440);
+    
+    // Reset FM Freqs
+    if(window.fmFreqData) window.fmFreqData.fill(100);
     
     // RESET MUTES
     window.isMutedSeq2 = false;
@@ -109,15 +113,18 @@ function clearAllData() {
         window.refreshFadersVisuals(2);
         if(document.getElementById('grid-seq3')) window.refreshFadersVisuals(3);
     }
+    // RESET FADERS FM
+    if(window.refreshFMFaders) window.refreshFMFaders();
 }
 
 function savePattern(slot) {
     const data = {
-        version: "2.2",
+        version: "2.3", 
         masterLength: window.masterLength,
         drums: {
             seq: window.drumSequences,
             accents: window.drumAccents,
+            fmFreqs: window.fmFreqData, 
             mutes: window.trackMutes,
             solos: window.trackSolos,
             lengths: window.trackLengths,
@@ -132,7 +139,6 @@ function savePattern(slot) {
         synths: {
             seq2: window.synthSequences.seq2,
             seq3: window.synthSequences.seq3,
-            // C'est ici que la magie opère : on sauvegarde bien le tableau global
             freqs2: window.freqDataSeq2,
             freqs3: window.freqDataSeq3,
             params2: window.paramsSeq2, 
@@ -159,14 +165,23 @@ function loadPattern(slot) {
     try {
         const data = JSON.parse(json);
         
-        // Globals
         window.masterLength = data.masterLength || 16;
         document.querySelectorAll('.btn-length').forEach(b => { b.classList.toggle('active', parseInt(b.dataset.length) === window.masterLength); });
         if(window.updateNavButtonsState) window.updateNavButtonsState();
 
-        // Drums
         window.drumSequences = (data.drums.seq[0].length < 64) ? data.drums.seq.map(r => [...r, ...Array(64-r.length).fill(false)]) : data.drums.seq;
         window.drumAccents = (data.drums.accents[0].length < 64) ? data.drums.accents.map(r => [...r, ...Array(64-r.length).fill(false)]) : data.drums.accents;
+        
+        // Load FM Data
+        if (data.drums.fmFreqs) {
+            window.fmFreqData = data.drums.fmFreqs.map(v => parseFloat(v));
+            if (window.fmFreqData.length < 64) {
+                window.fmFreqData = [...window.fmFreqData, ...Array(64 - window.fmFreqData.length).fill(100)];
+            }
+        } else {
+            if(window.fmFreqData) window.fmFreqData.fill(100);
+        }
+
         window.trackMutes = data.drums.mutes;
         window.trackSolos = data.drums.solos;
         window.trackLengths = data.drums.lengths;
@@ -195,31 +210,18 @@ function loadPattern(slot) {
             }
         });
 
-        // Synths Notes
         window.synthSequences.seq2 = (data.synths.seq2.length < 64) ? [...data.synths.seq2, ...Array(64 - data.synths.seq2.length).fill(false)] : data.synths.seq2;
         window.synthSequences.seq3 = (data.synths.seq3 && data.synths.seq3.length < 64) ? [...data.synths.seq3, ...Array(64 - data.synths.seq3.length).fill(false)] : (data.synths.seq3 || Array(64).fill(false));
         
-        // --- RESTAURATION ROBUSTE DES FREQUENCES ---
         if (data.synths.freqs2 && data.synths.freqs2.length > 0) {
-            // On force la conversion en nombres pour éviter les chaînes "440"
             window.freqDataSeq2 = data.synths.freqs2.map(v => parseFloat(v));
-            // Padding si vieux save
-            if (window.freqDataSeq2.length < 64) {
-                window.freqDataSeq2 = [...window.freqDataSeq2, ...Array(64 - window.freqDataSeq2.length).fill(440)];
-            }
-        } else {
-            // Fallback
-            window.freqDataSeq2.fill(440);
-        }
+            if (window.freqDataSeq2.length < 64) window.freqDataSeq2 = [...window.freqDataSeq2, ...Array(64 - window.freqDataSeq2.length).fill(440)];
+        } else window.freqDataSeq2.fill(440);
 
         if (data.synths.freqs3 && data.synths.freqs3.length > 0) {
             window.freqDataSeq3 = data.synths.freqs3.map(v => parseFloat(v));
-            if (window.freqDataSeq3.length < 64) {
-                window.freqDataSeq3 = [...window.freqDataSeq3, ...Array(64 - window.freqDataSeq3.length).fill(440)];
-            }
-        } else {
-            window.freqDataSeq3.fill(440);
-        }
+            if (window.freqDataSeq3.length < 64) window.freqDataSeq3 = [...window.freqDataSeq3, ...Array(64 - window.freqDataSeq3.length).fill(440)];
+        } else window.freqDataSeq3.fill(440);
 
         setSlider('vol-seq2', data.synths.vol2);
         setSlider('synth2-disto', data.synths.params2.disto);
@@ -235,7 +237,6 @@ function loadPattern(slot) {
         const btnMute2 = document.getElementById('btn-mute-seq2'); 
         if(btnMute2) btnMute2.classList.toggle('active', mutes.seq2);
 
-        // Seq 3 UI activation
         const hasSeq3Data = data.synths.freqs3 && data.synths.freqs3.some(f => f !== 440);
         const isSeq3Visible = document.getElementById('seq3-container');
         if ((hasSeq3Data || mutes.seq3) && !isSeq3Visible) {
@@ -253,7 +254,6 @@ function loadPattern(slot) {
                  const btnMute3 = document.getElementById('btn-mute-seq3'); 
                  if(btnMute3) btnMute3.classList.toggle('active', mutes.seq3);
                  
-                 // Force refresh Seq 3 Faders
                  if(window.refreshFadersVisuals) window.refreshFadersVisuals(3);
              }
         }, 100);
@@ -264,11 +264,9 @@ function loadPattern(slot) {
         setSlider('global-delay-amt', data.global.delay.amt);
         setSlider('global-delay-time', data.global.delay.time);
 
-        // --- REFRESH FINAL OBLIGATOIRE ---
         if(window.refreshGridVisuals) window.refreshGridVisuals();
-        
-        // On force le refresh des faders Seq 2
         if(window.refreshFadersVisuals) window.refreshFadersVisuals(2);
+        if(window.refreshFMFaders) window.refreshFMFaders();
 
     } catch (e) {
         console.error(e);
@@ -286,6 +284,7 @@ function updateMemoryUI() {
     }
 }
 
+// ⚠️ C'EST ICI LA CORRECTION PRINCIPALE ⚠️
 function loadFactoryPreset(key) {
     const p = FACTORY_PRESETS[key];
     if(!p) return;
@@ -305,7 +304,6 @@ function loadFactoryPreset(key) {
     // Track Lengths
     if(p.trackLengths) {
         window.trackLengths = [...p.trackLengths]; // Clone
-        // Update sliders steps UI
         setSlider('kick-steps', p.trackLengths[0]);
         setSlider('snare-steps', p.trackLengths[1]);
         setSlider('hhc-steps', p.trackLengths[2]);
@@ -319,16 +317,36 @@ function loadFactoryPreset(key) {
         if(p.drums.accents[i]) window.drumAccents[i] = [...p.drums.accents[i], ...Array(64-p.drums.accents[i].length).fill(false)];
     }
 
+    // --- CORRECTION : CHARGEMENT DES FREQUENCES FM (DRUMS) ---
+    // Le code généré par le Generator V6 met les données dans p.drums.fmFreqs
+    if (p.drums && p.drums.fmFreqs) {
+        // On copie les données dans la mémoire vive
+        window.fmFreqData = [...p.drums.fmFreqs];
+        
+        // Sécurité : On s'assure qu'on a bien 64 valeurs
+        if (window.fmFreqData.length < 64) {
+             window.fmFreqData = [...window.fmFreqData, ...Array(64 - window.fmFreqData.length).fill(100)];
+        }
+    } else {
+        // Si le preset est ancien (V4/V5), on met tout à 100Hz
+        window.fmFreqData.fill(100);
+    }
+    // ---------------------------------------------------------
+
     // Synths
     if(p.synths.seq2) window.synthSequences.seq2 = [...p.synths.seq2, ...Array(64-p.synths.seq2.length).fill(false)];
     if(p.synths.seq3) window.synthSequences.seq3 = [...p.synths.seq3, ...Array(64-p.synths.seq3.length).fill(false)];
 
     // Freqs
     if(p.freqs2) window.freqDataSeq2 = [...p.freqs2];
-    else if(p.freqs && p.freqs.s2) window.freqDataSeq2.fill(p.freqs.s2); // Uniforme
+    else if(p.freqs && p.freqs.s2) window.freqDataSeq2.fill(p.freqs.s2); 
     
     if(p.freqs3) window.freqDataSeq3 = [...p.freqs3];
-    else if(p.freqs && p.freqs.s3) window.freqDataSeq3.fill(p.freqs.s3); // Uniforme
+    else if(p.freqs && p.freqs.s3) window.freqDataSeq3.fill(p.freqs.s3); 
+    
+    // Accents Synths
+    if(p.accents2) window.synthAccents.seq2 = [...p.accents2];
+    if(p.accents3) window.synthAccents.seq3 = [...p.accents3];
 
     // Update UI
     document.querySelectorAll('.btn-length').forEach(b => { b.classList.toggle('active', parseInt(b.dataset.length) === window.masterLength); });
@@ -339,7 +357,10 @@ function loadFactoryPreset(key) {
         if(document.getElementById('grid-seq3')) window.refreshFadersVisuals(3);
     }
     
-    // Si Seq 3 utilisé dans le preset, on ouvre le panneau
+    // --- REFRESH DES FADERS FM (IMPORTANT) ---
+    if(window.refreshFMFaders) window.refreshFMFaders();
+    
+    // Si Seq 3 utilisé dans le preset
     const seq3Used = p.synths.seq3.some(x => x === true);
     const isSeq3Visible = document.getElementById('seq3-container');
     if (seq3Used && !isSeq3Visible) {
