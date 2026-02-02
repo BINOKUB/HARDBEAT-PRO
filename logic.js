@@ -228,6 +228,7 @@ function generateSmartRhythm(trackIdx) {
 }
 
 // --- MODIF : AJOUT BOUTON CHORD DANS L'UI ---
+// --- MODIF : CORRECTION BUG CHARGEMENT FREQUENCES SEQ 3 ---
 function initSeq3Extension() {
     const btn = document.getElementById('add-seq-btn');
     if (!btn) return;
@@ -290,6 +291,25 @@ function initSeq3Extension() {
                 }
             };
         }
+
+        // --- CORRECTION MAJEURE ICI ---
+        // J'ai supprimé le bloc qui écrasait window.freqDataSeq3 avec les valeurs par défaut
+        // On fait confiance à la mémoire globale !
+
+        document.getElementById('vol-seq3').oninput = (e) => window.synthVol3 = parseFloat(e.target.value);
+        document.getElementById('synth3-disto').oninput = (e) => { if(window.updateSynth3Disto) window.updateSynth3Disto(parseFloat(e.target.value)); };
+        document.getElementById('synth3-res').oninput = (e) => { if(window.updateSynth3Res) window.updateSynth3Res(parseFloat(e.target.value)); };
+        document.getElementById('synth3-cutoff').oninput = (e) => { if(window.updateSynth3Cutoff) window.updateSynth3Cutoff(parseFloat(e.target.value)); };
+        document.getElementById('synth3-decay').oninput = (e) => { if(window.updateSynth3Decay) window.updateSynth3Decay(parseFloat(e.target.value)); };
+        
+        document.getElementById('seq3-container').scrollIntoView({ behavior: 'smooth' });
+        
+        refreshGridVisuals();
+        
+        // C'est ça qui va remettre les faders à la bonne place selon la mémoire chargée
+        refreshFadersVisuals(3); 
+    });
+}
 
         const initialFaders3 = document.querySelectorAll('#grid-freq-seq3 .freq-fader');
         initialFaders3.forEach((f, i) => { window.freqDataSeq3[i] = parseFloat(f.value); });
