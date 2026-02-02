@@ -1,5 +1,5 @@
 /* ==========================================
-   HARDBEAT PRO - AUDIO ENGINE (V8 - SYNTH ACCENTS)
+   HARDBEAT PRO - AUDIO ENGINE (V8 - SYNTH ACCENTS) - DEV
    ========================================== */
 window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 window.masterGain = window.audioCtx.createGain();
@@ -259,3 +259,15 @@ window.playSynthSound = function(seqId, freq, duration, slide, disto) {
 };
 
 console.log("AUDIO V8: Accents Synths Activés !");
+
+// ... fin du code audio existant ...
+
+// --- HOOK VISUALIZER (OSCILLOSCOPE) ---
+// On attend un court instant que tout soit chargé, puis on branche.
+setTimeout(() => {
+    if (window.initOscilloscope && window.audioCtx && window.masterGain) {
+        // On branche l'oscilloscope sur le Master Gain (avant le limiteur)
+        // ID du canvas HTML : "oscilloscope"
+        window.initOscilloscope(window.audioCtx, window.masterGain, "oscilloscope");
+    }
+}, 500);
