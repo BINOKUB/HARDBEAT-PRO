@@ -1,5 +1,5 @@
 /* ==========================================
-   HARDBEAT PRO - AUDIO ENGINE (V10 - DETROIT CHORDS)
+   HARDBEAT PRO - AUDIO ENGINE (V10  - DETROIT CHORDS)
    ========================================== */
 window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 window.masterGain = window.audioCtx.createGain();
