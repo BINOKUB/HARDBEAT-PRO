@@ -1,5 +1,5 @@
 /* ==========================================
-   HARDBEAT PRO - UI LOGIC (V16 - FIX SAVE SEQ3 & PADS RECOVERY)
+   HARDBEAT PRO - UI LOGIC (V17 - MAJOR/MINOR BUTTONS)
    ========================================== */
 
 let masterTimer; 
@@ -18,6 +18,9 @@ window.synthSequences = { seq2: Array(64).fill(false), seq3: Array(64).fill(fals
 
 // Mémoire pour les accents Synthés
 window.synthAccents = { seq2: Array(64).fill(false), seq3: Array(64).fill(false) };
+
+// NOUVEAU : Mémoire Type d'Accord (False = Mineur, True = Majeur)
+window.chordQualitySeq3 = Array(64).fill(false); 
 
 window.fmFreqData = Array(64).fill(100); // 100Hz par défaut
 
@@ -61,10 +64,24 @@ function initGrid(idPrefix) {
     if (!gridContainer) return;
     let htmlContent = '';
     const isDrum = (idPrefix === 'grid-seq1');
+    const isSeq3 = (idPrefix === 'grid-seq3'); // Detection Seq 3
+
     for (let i = 0; i < 16; i++) {
         let padHTML = '';
-        if (isDrum) { padHTML = `<div class="step-column"><div class="step-pad" data-index="${i}" data-type="note"><span>${i+1}</span><div class="led"></div></div><div class="accent-pad" data-index="${i}" data-type="accent" title="Accent"></div></div>`; } 
-        else { padHTML = `<div class="step-pad" data-index="${i}" data-type="note"><div class="led"></div></div>`; }
+        if (isDrum) { 
+            padHTML = `<div class="step-column"><div class="step-pad" data-index="${i}" data-type="note"><span>${i+1}</span><div class="led"></div></div><div class="accent-pad" data-index="${i}" data-type="accent" title="Accent"></div></div>`; 
+        } 
+        else if (isSeq3) {
+            // NOUVEAU POUR SEQ 3 : PAD + BOUTON ACCORD EN DESSOUS
+            padHTML = `
+            <div class="step-column">
+                <div class="step-pad" data-index="${i}" data-type="note"><div class="led"></div></div>
+                <div class="chord-type-btn" data-index="${i}" title="Min/Maj" style="width:100%; height:12px; margin-top:4px; background:#222; border:1px solid #444; border-radius:2px; cursor:pointer;"></div>
+            </div>`;
+        }
+        else { 
+            padHTML = `<div class="step-pad" data-index="${i}" data-type="note"><div class="led"></div></div>`; 
+        }
         htmlContent += padHTML;
     }
     gridContainer.innerHTML = htmlContent;
@@ -578,6 +595,7 @@ window.refreshGridVisuals = function() {
         if(window.drumAccents && window.drumAccents[currentTrackIndex]) { acc.classList.toggle('active', window.drumAccents[currentTrackIndex][realIndex]); }
     });
     
+    // UPDATE SYNTH GRIDS
     const updateSynthGrid = (seqKey, seqNum, page) => {
         const padsS = document.querySelectorAll(`#grid-seq${seqNum} .step-pad`);
         const offsetS = page * 16;
@@ -590,6 +608,27 @@ window.refreshGridVisuals = function() {
             pad.classList.toggle('active', isActive); 
             const led = pad.querySelector('.led'); if (led) led.style.background = isActive ? color : "#330000"; 
         });
+
+        // NOUVEAU : UPDATE DES BOUTONS ACCORDS (SEQ 3 SEULEMENT)
+        if (seqNum === 3) {
+            const chordBtns = document.querySelectorAll('#grid-seq3 .chord-type-btn');
+            chordBtns.forEach((btn, i) => {
+                const realIndex = i + offsetS;
+                btn.dataset.realIndex = realIndex;
+                if (realIndex >= window.masterLength) { btn.style.opacity = "0.2"; btn.style.pointerEvents = "none"; }
+                else { btn.style.opacity = "1"; btn.style.pointerEvents = "auto"; }
+                
+                // CHECK ETAT MAJEUR / MINEUR
+                const isMaj = window.chordQualitySeq3[realIndex];
+                if (isMaj) {
+                    btn.style.background = "#ffaa00"; // Orange (MAJEUR)
+                    btn.style.borderColor = "#ffaa00";
+                } else {
+                    btn.style.background = "#222"; // Sombre (MINEUR)
+                    btn.style.borderColor = "#444";
+                }
+            });
+        }
     };
     updateSynthGrid('seq2', 2, currentPageSeq2);
     if(window.synthSequences.seq3) updateSynthGrid('seq3', 3, currentPageSeq3);
@@ -625,6 +664,17 @@ document.addEventListener('mousedown', (e) => {
         const idx = parseInt(accentBtn.dataset.realIndex);
         window.drumAccents[currentTrackIndex][idx] = !window.drumAccents[currentTrackIndex][idx];
         accentBtn.classList.toggle('active');
+    }
+
+    // CLICK SUR LE NOUVEAU BOUTON ACCORD
+    const chordTypeBtn = e.target.closest('.chord-type-btn');
+    if (chordTypeBtn) {
+        const idx = parseInt(chordTypeBtn.dataset.realIndex);
+        if (!isNaN(idx)) {
+            // TOGGLE MAJEUR <-> MINEUR
+            window.chordQualitySeq3[idx] = !window.chordQualitySeq3[idx];
+            refreshGridVisuals();
+        }
     }
 });
 
@@ -678,56 +728,39 @@ function initFreqSnapshots() {
     });
 }
 
-/* ==========================================
-   PRESET LOADER
-   ========================================== */
-
 window.loadPreset = function(presetKey) {
     if (!window.presets || !window.presets[presetKey]) {
         console.error("Preset introuvable ou presets.js non chargé.");
         return;
     }
-
     const p = window.presets[presetKey];
     console.log("Loading Preset:", p.name);
-
     if(document.getElementById('display-bpm1')) document.getElementById('display-bpm1').innerText = p.bpm;
     window.masterLength = p.masterLength || 16;
     window.trackLengths = p.trackLengths || [16, 16, 16, 16, 16]; 
-
     window.drumSequences = p.drums.seq.map(s => [...s]); 
     window.drumAccents = p.drums.accents ? p.drums.accents.map(s => [...s]) : Array.from({length:5}, () => Array(64).fill(false));
-
     window.synthSequences.seq2 = [...p.synths.seq2];
     window.synthSequences.seq3 = [...p.synths.seq3];
-    
     window.freqDataSeq2 = p.freqs2 ? [...p.freqs2] : Array(64).fill(440);
     window.freqDataSeq3 = p.freqs3 ? [...p.freqs3] : Array(64).fill(440);
-
-    if (p.accents2) {
-        window.synthAccents.seq2 = [...p.accents2];
+    if (p.accents2) { window.synthAccents.seq2 = [...p.accents2]; } else { window.synthAccents.seq2 = Array(64).fill(false); }
+    if (p.accents3) { window.synthAccents.seq3 = [...p.accents3]; } else { window.synthAccents.seq3 = Array(64).fill(false); }
+    
+    // NOUVEAU : CHARGEMENT MAJEUR/MINEUR (SI PRESENT DANS PRESET)
+    if (p.chordQuality) {
+        window.chordQualitySeq3 = [...p.chordQuality];
     } else {
-        window.synthAccents.seq2 = Array(64).fill(false);
-    }
-
-    if (p.accents3) {
-        window.synthAccents.seq3 = [...p.accents3];
-    } else {
-        window.synthAccents.seq3 = Array(64).fill(false);
+        window.chordQualitySeq3 = Array(64).fill(false);
     }
 
     const inputs = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
-    inputs.forEach((id, i) => {
-        const el = document.getElementById(id);
-        if(el) el.value = window.trackLengths[i];
-    });
+    inputs.forEach((id, i) => { const el = document.getElementById(id); if(el) el.value = window.trackLengths[i]; });
 
     if (typeof refreshGridVisuals === 'function') refreshGridVisuals();
-    
     if (typeof refreshFadersVisuals === 'function') {
         refreshFadersVisuals(2);
         if(document.getElementById('grid-freq-seq3')) refreshFadersVisuals(3);
     }
-    
     console.log("Preset chargé avec succès !");
 };
