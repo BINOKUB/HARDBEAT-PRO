@@ -1,5 +1,5 @@
 /* ==========================================
-   HARDBEAT PRO - UI LOGIC (V15 - CHORD MODE UI)
+   HARDBEAT PRO - UI LOGIC (V16 - FIX SAVE SEQ3 & PADS RECOVERY)
    ========================================== */
 
 let masterTimer; 
@@ -9,17 +9,16 @@ let globalSwing = 0.06;
 // --- VARIABLES GLOBALES ---
 window.masterLength = 16;        
 window.isSaveMode = false;
-window.isChordModeSeq3 = false; // <--- NOUVEAU : Variable d'état pour l'accord
+window.isChordModeSeq3 = false; // Variable d'état pour l'accord
 
 // Mémoire
 window.drumSequences = Array.from({ length: 5 }, () => Array(64).fill(false));
 window.drumAccents = Array.from({ length: 5 }, () => Array(64).fill(false));
 window.synthSequences = { seq2: Array(64).fill(false), seq3: Array(64).fill(false) };
 
-
-// NOUVEAU : Mémoire pour les accents Synthés (Invisibles mais audibles)
+// Mémoire pour les accents Synthés
 window.synthAccents = { seq2: Array(64).fill(false), seq3: Array(64).fill(false) };
-// ... Sous window.synthAccents ...
+
 window.fmFreqData = Array(64).fill(100); // 100Hz par défaut
 
 window.freqDataSeq2 = Array(64).fill(440);
@@ -85,41 +84,26 @@ function setupLengthControls() {
     const btns = document.querySelectorAll('.btn-length');
     btns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // 1. GESTION VISUELLE DES BOUTONS
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
-            // 2. MISE A JOUR DU MASTER
             const newLength = parseInt(btn.dataset.length);
             window.masterLength = newLength;
 
-            // --- DEBUT DU CORRECTIF ---
-            
-            // 3. AUTO-SYNC : On aligne les pistes de batterie sur la nouvelle longueur
-            // C'est ça qui "débloque" l'accès aux pages 17-32 pour le moteur audio
             for(let i=0; i<5; i++) {
-                // On met à jour la longueur logique de la piste
                 window.trackLengths[i] = newLength;
-                
-                // Sécurité : Si le curseur était trop loin, on le ramène à 0 pour éviter un bug
                 if (trackCursors[i] >= newLength) trackCursors[i] = 0;
             }
 
-            // 4. MISE A JOUR VISUELLE DES SLIDERS (KICK-STEPS, SNARE-STEPS...)
-            // Pour que l'interface montre bien "32" ou "64" et pas "16"
             const inputs = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
             inputs.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) {
-                    el.value = newLength; // Le slider se déplace visuellement
-                    // Petite astuce : on augmente le max si besoin pour pas bloquer le slider
+                    el.value = newLength; 
                     if(parseInt(el.max) < newLength) el.max = newLength; 
                 }
             });
 
-            // --- FIN DU CORRECTIF ---
-
-            // 5. GESTION DES PAGES (Si on réduit la taille, on revient page 1)
             if (currentPageSeq1 * 16 >= window.masterLength) { currentPageSeq1 = 0; updatePageIndicator('seq1'); }
             if (currentPageSeq2 * 16 >= window.masterLength) { currentPageSeq2 = 0; updatePageIndicator('seq2'); }
             if (currentPageSeq3 * 16 >= window.masterLength) { currentPageSeq3 = 0; updatePageIndicator('seq3'); }
@@ -168,7 +152,6 @@ window.updateNavButtonsState = function() {
 function bindControls() {
     const bind = (id, obj, prop) => { const el = document.getElementById(id); if (el) el.oninput = (e) => obj[prop] = parseFloat(e.target.value); };
     
-    // Track Steps Sliders
     const bindSteps = (id, trackIdx) => {
         const el = document.getElementById(id);
         if (el) {
@@ -212,10 +195,9 @@ function generateSmartRhythm(trackIdx) {
             case 1: if (stepInBar === 4 || stepInBar === 12) { if (p > 0.05) { window.drumSequences[trackIdx][i] = true; window.drumAccents[trackIdx][i] = true; } } else if (stepInBar % 2 === 0) { if (p > 0.85) window.drumSequences[trackIdx][i] = true; } break;
             case 2: if (p > 0.3) window.drumSequences[trackIdx][i] = true; break;
             case 3: if (stepInBar === 2 || stepInBar === 6 || stepInBar === 10 || stepInBar === 14) { if (p > 0.2) window.drumSequences[trackIdx][i] = true; } break;
-            case 4: if (p > 0.3) window.drumSequences[trackIdx][i] = true; break; // Corrigé pour FM Drum (0.3 au lieu de 0.7)
+            case 4: if (p > 0.3) window.drumSequences[trackIdx][i] = true; break;
         }
     }
-    // GENERATION DES FREQUENCES (Uniquement pour FM DRUM - Track 4)
     if (trackIdx === 4) {
         for (let i = 0; i < window.masterLength; i++) {
             if (window.drumSequences[trackIdx][i]) {
@@ -227,8 +209,7 @@ function generateSmartRhythm(trackIdx) {
     }
 }
 
-// --- MODIF : AJOUT BOUTON CHORD DANS L'UI ---
-// --- MODIF : CORRECTION BUG CHARGEMENT FREQUENCES SEQ 3 ---
+// --- EXTENSION SEQ 3 ---
 function initSeq3Extension() {
     const btn = document.getElementById('add-seq-btn');
     if (!btn) return;
@@ -261,25 +242,24 @@ function initSeq3Extension() {
             
             <div class="synth-controls" style="display:flex; gap:10px; margin-top:10px; align-items:center;">
                 <button id="btn-mute-seq3" class="btn-synth-mute" data-target="3">MUTE SEQ 3</button>
-                
                 <button id="btn-chord-seq3" style="border:1px solid #a855f7; background:transparent; color:#a855f7; padding:5px 10px; cursor:pointer; font-weight:bold; font-size:11px;">CHORD: OFF</button>
-                
                 <div class="random-unit"><button class="btn-random" data-target="3">RANDOMIZE SEQ 3</button></div>
             </div>
         </section>`;
         
-        initGrid('grid-seq3'); initFaders('grid-freq-seq3', 3);
+        // INIT PADS & FADERS
+        initGrid('grid-seq3'); 
+        initFaders('grid-freq-seq3', 3);
         
         document.getElementById('btn-prev-page-seq3').onclick = () => { if(currentPageSeq3 > 0) { currentPageSeq3--; updatePageIndicator('seq3'); refreshGridVisuals(); refreshFadersVisuals(3); }};
         document.getElementById('btn-next-page-seq3').onclick = () => { if((currentPageSeq3 + 1) * 16 < window.masterLength) { currentPageSeq3++; updatePageIndicator('seq3'); refreshGridVisuals(); refreshFadersVisuals(3); }};
         updatePageIndicator('seq3');
 
-        // LOGIQUE DU BOUTON CHORD
+        // LOGIQUE CHORD
         const btnChord = document.getElementById('btn-chord-seq3');
         if(btnChord) {
             btnChord.onclick = () => {
                 window.isChordModeSeq3 = !window.isChordModeSeq3;
-                
                 if(window.isChordModeSeq3) {
                     btnChord.innerText = "CHORD: ON";
                     btnChord.style.background = "#a855f7";
@@ -292,44 +272,23 @@ function initSeq3Extension() {
             };
         }
 
-        // --- CORRECTION MAJEURE ICI ---
-        // J'ai supprimé le bloc qui écrasait window.freqDataSeq3 avec les valeurs par défaut
-        // On fait confiance à la mémoire globale !
-
-        document.getElementById('vol-seq3').oninput = (e) => window.synthVol3 = parseFloat(e.target.value);
-        document.getElementById('synth3-disto').oninput = (e) => { if(window.updateSynth3Disto) window.updateSynth3Disto(parseFloat(e.target.value)); };
-        document.getElementById('synth3-res').oninput = (e) => { if(window.updateSynth3Res) window.updateSynth3Res(parseFloat(e.target.value)); };
-        document.getElementById('synth3-cutoff').oninput = (e) => { if(window.updateSynth3Cutoff) window.updateSynth3Cutoff(parseFloat(e.target.value)); };
-        document.getElementById('synth3-decay').oninput = (e) => { if(window.updateSynth3Decay) window.updateSynth3Decay(parseFloat(e.target.value)); };
-        
-        document.getElementById('seq3-container').scrollIntoView({ behavior: 'smooth' });
-        
-        refreshGridVisuals();
-        
-        // C'est ça qui va remettre les faders à la bonne place selon la mémoire chargée
-        refreshFadersVisuals(3); 
-    });
-}
-
-        const initialFaders3 = document.querySelectorAll('#grid-freq-seq3 .freq-fader');
-        initialFaders3.forEach((f, i) => { window.freqDataSeq3[i] = parseFloat(f.value); });
-
-        document.getElementById('vol-seq3').oninput = (e) => window.synthVol3 = parseFloat(e.target.value);
-        document.getElementById('synth3-disto').oninput = (e) => { if(window.updateSynth3Disto) window.updateSynth3Disto(parseFloat(e.target.value)); };
-        document.getElementById('synth3-res').oninput = (e) => { if(window.updateSynth3Res) window.updateSynth3Res(parseFloat(e.target.value)); };
-        document.getElementById('synth3-cutoff').oninput = (e) => { if(window.updateSynth3Cutoff) window.updateSynth3Cutoff(parseFloat(e.target.value)); };
-        document.getElementById('synth3-decay').oninput = (e) => { if(window.updateSynth3Decay) window.updateSynth3Decay(parseFloat(e.target.value)); };
-        
-        document.getElementById('seq3-container').scrollIntoView({ behavior: 'smooth' });
-        
-        refreshGridVisuals();
+        // FIX SAVE: On ne remet PAS à zéro les fréquences. On charge ce qu'il y a en mémoire.
         refreshFadersVisuals(3);
+
+        document.getElementById('vol-seq3').oninput = (e) => window.synthVol3 = parseFloat(e.target.value);
+        document.getElementById('synth3-disto').oninput = (e) => { if(window.updateSynth3Disto) window.updateSynth3Disto(parseFloat(e.target.value)); };
+        document.getElementById('synth3-res').oninput = (e) => { if(window.updateSynth3Res) window.updateSynth3Res(parseFloat(e.target.value)); };
+        document.getElementById('synth3-cutoff').oninput = (e) => { if(window.updateSynth3Cutoff) window.updateSynth3Cutoff(parseFloat(e.target.value)); };
+        document.getElementById('synth3-decay').oninput = (e) => { if(window.updateSynth3Decay) window.updateSynth3Decay(parseFloat(e.target.value)); };
+        
+        document.getElementById('seq3-container').scrollIntoView({ behavior: 'smooth' });
+        
+        refreshGridVisuals();
     });
 }
 
 function initAudioPreview() {
     console.log("Audio Preview V4: Active.");
-
     const triggerPreview = (target, type) => {
         const section = target.closest('.rack-section');
         if (!section) return;
@@ -364,15 +323,11 @@ function initAudioPreview() {
             window.playSynthSound(seqId, freq, 0.1, 0, 0);
         }
     };
-
     document.addEventListener('input', (e) => { if (e.target.classList.contains('freq-fader')) triggerPreview(e.target, 'fader'); });
     document.addEventListener('click', (e) => { const pad = e.target.closest('.step-pad'); if (pad && pad.classList.contains('active')) triggerPreview(pad, 'pad'); });
 }
 
-
-// --- GESTION DES FADERS FM (CONTEXTUEL) ---
 function initFMExtension() {
-    // 1. Création du container HTML
     const grid1 = document.getElementById('grid-seq1');
     if(!grid1) return;
     
@@ -388,60 +343,47 @@ function initFMExtension() {
         </div>`;
     }
     fmContainer.innerHTML = html;
-
-    // --- CORRECTION DU PLACEMENT ---
     const section = grid1.closest('.rack-section');
     section.appendChild(fmContainer); 
-    // -------------------------------
 
-    // 2. Ecouteurs d'événements
     const faders = fmContainer.querySelectorAll('.fm-freq-fader');
     faders.forEach(f => {
         f.oninput = (e) => {
             const val = parseInt(e.target.value);
             const idx = parseInt(e.target.dataset.realIndex); 
             if(!isNaN(idx)) window.fmFreqData[idx] = val;
-            
             const label = e.target.previousElementSibling;
             if(label) label.innerText = val;
         };
     });
 }
 
-// Fonction pour rafraîchir les valeurs des faders FM (Pagination)
 function refreshFMFaders() {
     const container = document.getElementById('fm-faders-container');
     if(!container) return;
     
-    // On n'affiche le container QUE si on est sur la piste 4 (FM)
     if(currentTrackIndex === 4) {
         container.classList.add('visible');
     } else {
         container.classList.remove('visible');
-        return; // Pas besoin de calculer si caché
+        return; 
     }
 
     const faders = container.querySelectorAll('.fm-freq-fader');
-    const offset = currentPageSeq1 * 16; // Utilise la pagination batterie
+    const offset = currentPageSeq1 * 16; 
 
     faders.forEach((f, i) => {
         const realIndex = i + offset;
-        f.dataset.realIndex = realIndex; // Lien avec la mémoire 64 pas
-        
-        // Récupération valeur ou défaut 100Hz
+        f.dataset.realIndex = realIndex; 
         const val = window.fmFreqData[realIndex] || 100;
         f.value = val;
-        
         const label = f.previousElementSibling;
         if(label) label.innerText = val;
         
-        // Désactiver si hors longueur master
         if(realIndex >= window.masterLength) {
-            f.disabled = true;
-            f.style.opacity = "0.2";
+            f.disabled = true; f.style.opacity = "0.2";
         } else {
-            f.disabled = false;
-            f.style.opacity = "1";
+            f.disabled = false; f.style.opacity = "1";
         }
     });
 }
@@ -451,12 +393,12 @@ function refreshFMFaders() {
    MAIN INIT 
    ========================================== */
 window.addEventListener('load', () => {
-    console.log("Initialisation Logic V12 (Final)...");
+    console.log("Initialisation Logic V16 (Fixed)...");
     
     if (!window.audioCtx) console.error("ERREUR : audio.js manquant !");
 
     initGrid('grid-seq1'); 
-   initFMExtension();
+    initFMExtension();
     initGrid('grid-seq2'); 
     initFaders('grid-freq-seq2', 2);
     
@@ -486,7 +428,7 @@ window.addEventListener('load', () => {
     
     setTimeout(initAudioPreview, 800);
 
-    console.log("Logic V12 : Prêt.");
+    console.log("Logic V16 : Prêt.");
 });
 
 // --- PLAYBACK ENGINE ---
@@ -565,23 +507,17 @@ let currentSynthStep = 0;
 function triggerSynths(masterStep) {
     if(window.playSynthStep) {
         const isActive2 = window.synthSequences.seq2[masterStep];
-        
-        // CHECK ACCENT MEMORY
         let isAccent2 = false;
         if(window.synthAccents && window.synthAccents.seq2) {
             isAccent2 = window.synthAccents.seq2[masterStep];
         }
-
         if(window.freqDataSeq2) window.playSynthStep(masterStep, window.freqDataSeq2[masterStep], 2, isActive2, isAccent2);
 
         const isActive3 = window.synthSequences.seq3[masterStep];
-        
-        // CHECK ACCENT MEMORY 3
         let isAccent3 = false;
         if(window.synthAccents && window.synthAccents.seq3) {
             isAccent3 = window.synthAccents.seq3[masterStep];
         }
-
         if(window.freqDataSeq3) window.playSynthStep(masterStep, window.freqDataSeq3[masterStep], 3, isActive3, isAccent3);
     }
 }
@@ -743,11 +679,10 @@ function initFreqSnapshots() {
 }
 
 /* ==========================================
-   PRESET LOADER (A ajouter à la fin de logic.js)
+   PRESET LOADER
    ========================================== */
 
 window.loadPreset = function(presetKey) {
-    // 1. On vérifie si le preset existe
     if (!window.presets || !window.presets[presetKey]) {
         console.error("Preset introuvable ou presets.js non chargé.");
         return;
@@ -756,57 +691,41 @@ window.loadPreset = function(presetKey) {
     const p = window.presets[presetKey];
     console.log("Loading Preset:", p.name);
 
-    // 2. CHARGEMENT BASIQUE
     if(document.getElementById('display-bpm1')) document.getElementById('display-bpm1').innerText = p.bpm;
     window.masterLength = p.masterLength || 16;
     window.trackLengths = p.trackLengths || [16, 16, 16, 16, 16]; 
 
-    // 3. DRUMS & ACCENTS (DRUMS)
-    // On copie les données pour ne pas modifier le preset original en mémoire
     window.drumSequences = p.drums.seq.map(s => [...s]); 
-    // Si le preset a des accents drums, on les charge, sinon on met du vide
     window.drumAccents = p.drums.accents ? p.drums.accents.map(s => [...s]) : Array.from({length:5}, () => Array(64).fill(false));
 
-    // 4. SYNTHS (NOTES & FRÉQUENCES)
     window.synthSequences.seq2 = [...p.synths.seq2];
     window.synthSequences.seq3 = [...p.synths.seq3];
     
     window.freqDataSeq2 = p.freqs2 ? [...p.freqs2] : Array(64).fill(440);
     window.freqDataSeq3 = p.freqs3 ? [...p.freqs3] : Array(64).fill(440);
 
-    // 5. SYNTHS (ACCENTS - NOUVEAU V5)
-    // C'est ici qu'on gère la compatibilité.
-    
-    // Pour Seq 2
     if (p.accents2) {
         window.synthAccents.seq2 = [...p.accents2];
     } else {
-        // Si c'est un vieux preset, on efface les accents précédents pour ne pas avoir de "fantômes"
         window.synthAccents.seq2 = Array(64).fill(false);
     }
 
-    // Pour Seq 3
     if (p.accents3) {
         window.synthAccents.seq3 = [...p.accents3];
     } else {
         window.synthAccents.seq3 = Array(64).fill(false);
     }
 
-    // 6. ACTUALISATION DE L'INTERFACE
-    // On met à jour les Sliders de longueur (Polyrythmie)
     const inputs = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
     inputs.forEach((id, i) => {
         const el = document.getElementById(id);
         if(el) el.value = window.trackLengths[i];
     });
 
-    // On rafraîchit la grille visuelle
     if (typeof refreshGridVisuals === 'function') refreshGridVisuals();
     
-    // On rafraîchit les faders de fréquences
     if (typeof refreshFadersVisuals === 'function') {
         refreshFadersVisuals(2);
-        // On ne rafraîchit le 3 que si l'extension est ouverte, pour éviter les erreurs
         if(document.getElementById('grid-freq-seq3')) refreshFadersVisuals(3);
     }
     
