@@ -20,11 +20,12 @@
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            cursor: pointer;
+            cursor: pointer; /* Indique que c'est cliquable */
             transition: 0.3s;
             background: #111;
             color: #666;
             margin-bottom: 20px;
+            position: relative;
         }
         .drop-zone:hover { border-color: var(--cyan); color: var(--cyan); background: #151515; }
         .drop-zone.active { border-color: var(--yellow); color: var(--yellow); background: #222; }
@@ -61,9 +62,10 @@
     <div class="drop-zone" id="drop-zone">
         <span style="font-size: 24px;">🛡️</span>
         <span>GLISSE TON FICHIER .JSON ICI</span>
-        <span style="font-size: 10px; margin-top:5px;">(Fichier Exporté depuis Hardbeat Pro)</span>
-        <input type="file" id="file-input" accept=".json" style="display:none">
+        <span style="font-size: 10px; margin-top:5px;">(Ou clique pour parcourir)</span>
     </div>
+    
+    <input type="file" id="file-input" accept=".json" style="display:none">
 
     <div class="meta-row">
         <div class="col">
@@ -94,32 +96,36 @@
     // --- SECURITY SANITIZER ---
     function sanitizeInput(str, isId = false) {
         if (!str) return "";
-        
-        // Si c'est un ID, on est très strict : que des lettres, chiffres et underscores
-        if (isId) {
-            return str.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
-        }
-
-        // Si c'est un Nom, on autorise les espaces mais on tue les caractères dangereux (HTML/JS Injection)
-        return str
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "")   // On vire les guillemets doubles pour ne pas casser le string JS
-            .replace(/'/g, "")   // On vire les simples aussi pour être sûr
-            .replace(/`/g, "")   // On vire les backticks
-            .replace(/\\/g, ""); // On vire les backslashes
+        if (isId) return str.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase();
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "").replace(/'/g, "").replace(/`/g, "").replace(/\\/g, "");
     }
 
-    // --- DRAG & DROP ---
-    dropZone.addEventListener('click', () => fileInput.click());
-    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('active'); });
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('active'); );
+    // --- CLICK & DRAG HANDLING ---
+    // 1. Clic sur la zone déclenche l'input caché
+    dropZone.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    // 2. Gestion du Drag & Drop
+    dropZone.addEventListener('dragover', (e) => { 
+        e.preventDefault(); 
+        dropZone.classList.add('active'); 
+    });
+    
+    dropZone.addEventListener('dragleave', () => { 
+        dropZone.classList.remove('active'); 
+    });
+    
     dropZone.addEventListener('drop', (e) => {
-        e.preventDefault(); dropZone.classList.remove('active');
+        e.preventDefault(); 
+        dropZone.classList.remove('active');
         if(e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
     });
-    fileInput.addEventListener('change', (e) => { if(e.target.files[0]) processFile(e.target.files[0]); });
+
+    // 3. Gestion du fichier sélectionné via le clic
+    fileInput.addEventListener('change', (e) => { 
+        if(e.target.files[0]) processFile(e.target.files[0]); 
+    });
 
     // --- HELPER ---
     function boolsToIndices(arr) {
@@ -134,14 +140,12 @@
             try {
                 loadedData = JSON.parse(e.target.result);
                 
-                // Pré-remplissage intelligent
+                // Pré-remplissage
                 const rawName = loadedData.name || "UNTITLED";
                 const cleanName = sanitizeInput(rawName);
-                // Création d'un ID à partir du nom nettoyé
                 const cleanID = cleanName.toLowerCase().replace(/\s+/g, '_');
 
                 document.getElementById('p-name').value = cleanName;
-                // On ne remplace l'ID que s'il est vide
                 if(!document.getElementById('p-id').value) {
                     document.getElementById('p-id').value = cleanID;
                 }
@@ -159,22 +163,17 @@
     // --- GENERATION (ENGINE V21) ---
     function renderCodeFromCache() {
         if (!loadedData) return;
-
         const data = loadedData;
         
-        // 1. APPLICATION DE LA SECURITE SUR LES CHAMPS UTILISATEUR
         const rawId = document.getElementById('p-id').value || "new_preset";
-        const id = sanitizeInput(rawId, true); // Mode Strict pour l'ID
-        
+        const id = sanitizeInput(rawId, true);
         const rawName = document.getElementById('p-name').value || "USER PRESET";
-        const name = sanitizeInput(rawName, false); // Mode Text pour le nom
+        const name = sanitizeInput(rawName, false);
 
-        // 2. DATA GLOBALE (Avec Fallbacks anti-crash)
         const bpm = data.global ? data.global.bpm : (data.bpm || 120);
         const swing = (data.global && data.global.swing !== undefined) ? data.global.swing : 0;
         const len = data.global ? data.global.len : 16;
         
-        // Gestion Steps V21
         let trackLengths = [16,16,16,16,16];
         if(data.global) {
             if(data.global.trackLengths) trackLengths = data.global.trackLengths;
@@ -183,41 +182,32 @@
             trackLengths = data.trackLengths;
         }
 
-        // 3. CONTROLS (Inclut le Rumble automatiquement car il est dans data.controls.kick)
         let controls = {};
-        if(data.controls) {
-            controls = JSON.parse(JSON.stringify(data.controls)); 
-        }
+        if(data.controls) controls = JSON.parse(JSON.stringify(data.controls)); 
 
-        // 4. MUTES & SOLOS (NOUVEAU V21)
         const mutes = data.mutes || [false, false, false, false, false];
         const solos = data.solos || [false, false, false, false, false];
 
-        // 5. DRUMS (Anti-Crash)
         const dSeq = data.drums && data.drums.seq ? data.drums.seq : [[],[],[],[],[]];
         const dAcc = data.drums && (data.drums.acc || data.drums.accents) ? (data.drums.acc || data.drums.accents) : [[],[],[],[],[]];
         
         const drumSeqsIndices = dSeq.map(seq => boolsToIndices(seq));
         const drumAccsIndices = dAcc.map(seq => boolsToIndices(seq));
 
-        // 6. SYNTHS (Anti-Crash)
         const synths = data.synths || {};
         const s2Seq = boolsToIndices(synths.seq2 || []);
         const s3Seq = boolsToIndices(synths.seq3 || []);
         const s2Acc = boolsToIndices(synths.acc2 || []);
         const s3Acc = boolsToIndices(synths.acc3 || []);
 
-        // 7. FREQS
         const roundArr = (arr) => arr ? arr.map(x => Math.round(x * 10) / 10) : [];
         const freqs = data.freqs || {};
         const f2 = roundArr(freqs.seq2 || data.freqs2);
         const f3 = roundArr(freqs.seq3 || data.freqs3);
         const fmFreqs = freqs.fm ? roundArr(freqs.fm) : [];
 
-        // 8. CHORDS
         const chords = (data.chords && data.chords.qual) ? data.chords.qual : [];
 
-        // --- TEMPLATE JS SÉCURISÉ ---
         const jsCode = `
     "${id}": {
         name: "${name}",
