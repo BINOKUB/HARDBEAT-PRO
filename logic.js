@@ -1,5 +1,6 @@
 /* ==========================================
-   HARDBEAT PRO - UI LOGIC (V17 - MAJOR/MINOR BUTTONS)
+   HARDBEAT PRO - UI LOGIC (V21 - FINAL FUSION)
+   Inclus : Fix Mutes/Solos, Rumble Module, Steps, M/m Display
    ========================================== */
 
 let masterTimer; 
@@ -9,21 +10,15 @@ let globalSwing = 0.06;
 // --- VARIABLES GLOBALES ---
 window.masterLength = 16;        
 window.isSaveMode = false;
-window.isChordModeSeq3 = false; // Variable d'état pour l'accord
+window.isChordModeSeq3 = false; 
 
-// Mémoire
+// Mémoire ACTIVE (Ce qu'on entend)
 window.drumSequences = Array.from({ length: 5 }, () => Array(64).fill(false));
 window.drumAccents = Array.from({ length: 5 }, () => Array(64).fill(false));
 window.synthSequences = { seq2: Array(64).fill(false), seq3: Array(64).fill(false) };
-
-// Mémoire pour les accents Synthés
 window.synthAccents = { seq2: Array(64).fill(false), seq3: Array(64).fill(false) };
-
-// NOUVEAU : Mémoire Type d'Accord (False = Mineur, True = Majeur)
-window.chordQualitySeq3 = Array(64).fill(false); 
-
-window.fmFreqData = Array(64).fill(100); // 100Hz par défaut
-
+window.chordQualitySeq3 = Array(64).fill(false); // False = Mineur, True = Majeur
+window.fmFreqData = Array(64).fill(100);
 window.freqDataSeq2 = Array(64).fill(440);
 window.freqDataSeq3 = Array(64).fill(440);
 
@@ -31,6 +26,10 @@ window.trackLengths = [16, 16, 16, 16, 16];
 window.trackMutes = [false, false, false, false, false];
 window.trackSolos = [false, false, false, false, false];
 let trackCursors = [0, 0, 0, 0, 0]; 
+
+// SYSTÈME DE MÉMOIRE
+window.memorySlots = Array(8).fill(null);
+window.currentMemorySlot = -1; 
 
 // Internes
 let currentPageSeq1 = 0;    
@@ -59,12 +58,13 @@ function showParamsForTrack(idx) {
     if (target) target.style.display = 'flex';
 }
 
+// --- INIT GRID (AVEC FIX M/m) ---
 function initGrid(idPrefix) {
     const gridContainer = document.getElementById(idPrefix);
     if (!gridContainer) return;
     let htmlContent = '';
     const isDrum = (idPrefix === 'grid-seq1');
-    const isSeq3 = (idPrefix === 'grid-seq3'); // Detection Seq 3
+    const isSeq3 = (idPrefix === 'grid-seq3'); 
 
     for (let i = 0; i < 16; i++) {
         let padHTML = '';
@@ -72,11 +72,10 @@ function initGrid(idPrefix) {
             padHTML = `<div class="step-column"><div class="step-pad" data-index="${i}" data-type="note"><span>${i+1}</span><div class="led"></div></div><div class="accent-pad" data-index="${i}" data-type="accent" title="Accent"></div></div>`; 
         } 
         else if (isSeq3) {
-            // NOUVEAU POUR SEQ 3 : PAD + BOUTON ACCORD EN DESSOUS
             padHTML = `
             <div class="step-column">
                 <div class="step-pad" data-index="${i}" data-type="note"><div class="led"></div></div>
-                <div class="chord-type-btn" data-index="${i}" title="Min/Maj" style="width:100%; height:12px; margin-top:4px; background:#222; border:1px solid #444; border-radius:2px; cursor:pointer;"></div>
+                <div class="chord-type-btn" data-index="${i}" title="Min/Maj" style="width:100%; height:12px; margin-top:4px; background:#222; border:1px solid #444; border-radius:2px; cursor:pointer; display:flex; justify-content:center; align-items:center; font-size:9px; font-weight:bold; color:#555;">m</div>
             </div>`;
         }
         else { 
@@ -111,16 +110,6 @@ function setupLengthControls() {
                 window.trackLengths[i] = newLength;
                 if (trackCursors[i] >= newLength) trackCursors[i] = 0;
             }
-
-            const inputs = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
-            inputs.forEach(id => {
-                const el = document.getElementById(id);
-                if(el) {
-                    el.value = newLength; 
-                    if(parseInt(el.max) < newLength) el.max = newLength; 
-                }
-            });
-
             if (currentPageSeq1 * 16 >= window.masterLength) { currentPageSeq1 = 0; updatePageIndicator('seq1'); }
             if (currentPageSeq2 * 16 >= window.masterLength) { currentPageSeq2 = 0; updatePageIndicator('seq2'); }
             if (currentPageSeq3 * 16 >= window.masterLength) { currentPageSeq3 = 0; updatePageIndicator('seq3'); }
@@ -166,27 +155,57 @@ window.updateNavButtonsState = function() {
     checkBtn('btn-prev-page-seq3', 'btn-next-page-seq3', currentPageSeq3);
 };
 
+
+// --- BINDING DES CONTROLES (C'est ici que tes Drums avaient disparu) ---
 function bindControls() {
-    const bind = (id, obj, prop) => { const el = document.getElementById(id); if (el) el.oninput = (e) => obj[prop] = parseFloat(e.target.value); };
+    const bind = (id, obj, prop) => { 
+        const el = document.getElementById(id); 
+        if (el) el.oninput = (e) => obj[prop] = parseFloat(e.target.value); 
+    };
     
+    // Steps Sliders
     const bindSteps = (id, trackIdx) => {
         const el = document.getElementById(id);
         if (el) {
             el.oninput = (e) => {
-                window.trackLengths[trackIdx] = parseInt(e.target.value);
-                if (trackCursors[trackIdx] >= window.trackLengths[trackIdx]) trackCursors[trackIdx] = 0;
+                const val = parseInt(e.target.value);
+                window.trackLengths[trackIdx] = val;
+                if (trackCursors[trackIdx] >= val) trackCursors[trackIdx] = 0;
                 if (currentTrackIndex === trackIdx) refreshGridVisuals();
             };
         }
     };
-    bindSteps('kick-steps', 0); bindSteps('snare-steps', 1); bindSteps('hhc-steps', 2); bindSteps('hho-steps', 3); bindSteps('fm-steps', 4);
 
-    bind('kick-pitch', window.kickSettings, 'pitch'); bind('kick-decay', window.kickSettings, 'decay'); bind('kick-level', window.kickSettings, 'level');
-    bind('snare-tone', window.snareSettings, 'tone'); bind('snare-snappy', window.snareSettings, 'snappy'); bind('snare-level', window.snareSettings, 'level');
-    bind('hhc-tone', window.hhSettings, 'tone'); bind('hhc-level', window.hhSettings, 'levelClose');
-    bind('hho-decay', window.hhSettings, 'decayOpen'); bind('hho-level', window.hhSettings, 'levelOpen');
-    bind('fm-carrier', window.fmSettings, 'carrierPitch'); bind('fm-mod', window.fmSettings, 'modPitch'); bind('fm-amt', window.fmSettings, 'fmAmount'); bind('fm-decay', window.fmSettings, 'decay'); bind('fm-level', window.fmSettings, 'level');
+    bindSteps('kick-steps', 0);
+    bindSteps('snare-steps', 1);
+    bindSteps('hhc-steps', 2);
+    bindSteps('hho-steps', 3);
+    bindSteps('fm-steps', 4);
 
+    // KICK
+    bind('kick-pitch', window.kickSettings, 'pitch'); 
+    bind('kick-decay', window.kickSettings, 'decay'); 
+    bind('kick-level', window.kickSettings, 'level');
+
+    // SNARE
+    bind('snare-tone', window.snareSettings, 'tone'); 
+    bind('snare-snappy', window.snareSettings, 'snappy'); 
+    bind('snare-level', window.snareSettings, 'level');
+
+    // HI-HATS
+    bind('hhc-tone', window.hhSettings, 'tone'); 
+    bind('hhc-level', window.hhSettings, 'levelClose');
+    bind('hho-decay', window.hhSettings, 'decayOpen'); 
+    bind('hho-level', window.hhSettings, 'levelOpen');
+
+    // FM DRUM
+    bind('fm-carrier', window.fmSettings, 'carrierPitch'); 
+    bind('fm-mod', window.fmSettings, 'modPitch'); 
+    bind('fm-amt', window.fmSettings, 'fmAmount'); 
+    bind('fm-decay', window.fmSettings, 'decay'); 
+    bind('fm-level', window.fmSettings, 'level');
+
+    // GLOBAL & SYNTHS
     const swingSlider = document.getElementById('global-swing'); if(swingSlider) swingSlider.oninput = (e) => { globalSwing = parseInt(e.target.value) / 100; document.getElementById('swing-val').innerText = e.target.value + "%"; };
     const accSlider = document.getElementById('global-accent-amount'); if(accSlider) accSlider.oninput = (e) => { const val = parseFloat(e.target.value); if(window.updateAccentBoost) window.updateAccentBoost(val); document.getElementById('accent-val-display').innerText = val.toFixed(1) + 'x'; };
     const metroBox = document.getElementById('metro-toggle'); if(metroBox) metroBox.onchange = (e) => isMetroOn = e.target.checked;
@@ -244,15 +263,15 @@ function initSeq3Extension() {
                     <button class="btn-nav" id="btn-next-page-seq3" disabled>&gt;&gt;</button>
                 </div>
                 <div style="display:flex; gap:20px; align-items:center; margin-left:auto;">
-                    <div class="bpm-control"><label>VOL</label><input type="range" id="vol-seq3" min="0" max="1" step="0.01" value="0.6" style="width:60px"></div>
+                    <div class="bpm-control"><label>VOL</label><input type="range" id="vol-seq3" min="0" max="1" step="0.01" style="width:60px"></div>
                 </div>
             </div>
             <div class="synth-master-fixed" style="margin-bottom:15px; border-color:#a855f7;">
                 <span class="label-cyan" style="color:#a855f7;">SEQ 3 PARAM ></span>
-                <div class="group"><label>DISTO</label><input type="range" id="synth3-disto" min="0" max="1000" value="200"></div>
-                <div class="group"><label>RES</label><input type="range" id="synth3-res" min="1" max="25" value="8"></div>
-                <div class="group"><label>CUTOFF</label><input type="range" id="synth3-cutoff" min="1" max="10" step="0.1" value="2"></div>
-                <div class="group"><label>DECAY</label><input type="range" id="synth3-decay" min="0.1" max="1.0" step="0.05" value="0.4"></div>
+                <div class="group"><label>DISTO</label><input type="range" id="synth3-disto" min="0" max="1000"></div>
+                <div class="group"><label>RES</label><input type="range" id="synth3-res" min="1" max="25"></div>
+                <div class="group"><label>CUTOFF</label><input type="range" id="synth3-cutoff" min="1" max="10" step="0.1"></div>
+                <div class="group"><label>DECAY</label><input type="range" id="synth3-decay" min="0.1" max="1.0" step="0.05"></div>
             </div>
             <div class="freq-sliders-container" id="grid-freq-seq3"></div>
             <div class="step-grid" id="grid-seq3"></div>
@@ -264,7 +283,33 @@ function initSeq3Extension() {
             </div>
         </section>`;
         
-        // INIT PADS & FADERS
+        if(window.paramsSeq3) {
+            document.getElementById('synth3-disto').value = window.paramsSeq3.disto;
+            document.getElementById('synth3-res').value = window.paramsSeq3.res;
+            document.getElementById('synth3-cutoff').value = window.paramsSeq3.cutoff;
+            document.getElementById('synth3-decay').value = window.paramsSeq3.decay;
+        }
+        if(window.synthVol3 !== undefined) {
+             document.getElementById('vol-seq3').value = window.synthVol3;
+        }
+
+        const btnChord = document.getElementById('btn-chord-seq3');
+        if(btnChord) {
+             if(window.isChordModeSeq3) {
+                btnChord.innerText = "CHORD: ON"; btnChord.style.background = "#a855f7"; btnChord.style.color = "#000";
+            } else {
+                btnChord.innerText = "CHORD: OFF"; btnChord.style.background = "transparent"; btnChord.style.color = "#a855f7";
+            }
+            btnChord.onclick = () => {
+                window.isChordModeSeq3 = !window.isChordModeSeq3;
+                if(window.isChordModeSeq3) {
+                    btnChord.innerText = "CHORD: ON"; btnChord.style.background = "#a855f7"; btnChord.style.color = "#000";
+                } else {
+                    btnChord.innerText = "CHORD: OFF"; btnChord.style.background = "transparent"; btnChord.style.color = "#a855f7";
+                }
+            };
+        }
+
         initGrid('grid-seq3'); 
         initFaders('grid-freq-seq3', 3);
         
@@ -272,28 +317,14 @@ function initSeq3Extension() {
         document.getElementById('btn-next-page-seq3').onclick = () => { if((currentPageSeq3 + 1) * 16 < window.masterLength) { currentPageSeq3++; updatePageIndicator('seq3'); refreshGridVisuals(); refreshFadersVisuals(3); }};
         updatePageIndicator('seq3');
 
-        // LOGIQUE CHORD
-        const btnChord = document.getElementById('btn-chord-seq3');
-        if(btnChord) {
-            btnChord.onclick = () => {
-                window.isChordModeSeq3 = !window.isChordModeSeq3;
-                if(window.isChordModeSeq3) {
-                    btnChord.innerText = "CHORD: ON";
-                    btnChord.style.background = "#a855f7";
-                    btnChord.style.color = "#000";
-                } else {
-                    btnChord.innerText = "CHORD: OFF";
-                    btnChord.style.background = "transparent";
-                    btnChord.style.color = "#a855f7";
-                }
-            };
-        }
-
-        // FIX SAVE: On ne remet PAS à zéro les fréquences. On charge ce qu'il y a en mémoire.
         refreshFadersVisuals(3);
 
         document.getElementById('vol-seq3').oninput = (e) => window.synthVol3 = parseFloat(e.target.value);
-        document.getElementById('synth3-disto').oninput = (e) => { if(window.updateSynth3Disto) window.updateSynth3Disto(parseFloat(e.target.value)); };
+        
+        document.getElementById('synth3-disto').oninput = (e) => { 
+            const val = parseFloat(e.target.value);
+            if(window.updateSynth3Disto) window.updateSynth3Disto(val);
+        };
         document.getElementById('synth3-res').oninput = (e) => { if(window.updateSynth3Res) window.updateSynth3Res(parseFloat(e.target.value)); };
         document.getElementById('synth3-cutoff').oninput = (e) => { if(window.updateSynth3Cutoff) window.updateSynth3Cutoff(parseFloat(e.target.value)); };
         document.getElementById('synth3-decay').oninput = (e) => { if(window.updateSynth3Decay) window.updateSynth3Decay(parseFloat(e.target.value)); };
@@ -305,7 +336,6 @@ function initSeq3Extension() {
 }
 
 function initAudioPreview() {
-    console.log("Audio Preview V4: Active.");
     const triggerPreview = (target, type) => {
         const section = target.closest('.rack-section');
         if (!section) return;
@@ -353,11 +383,7 @@ function initFMExtension() {
     
     let html = '';
     for(let i=0; i<16; i++) {
-        html += `
-        <div class="fm-fader-unit">
-            <span class="fm-hz-label">100</span>
-            <input type="range" class="fm-freq-fader" data-index="${i}" min="40" max="400" value="100" step="1">
-        </div>`;
+        html += `<div class="fm-fader-unit"><span class="fm-hz-label">100</span><input type="range" class="fm-freq-fader" data-index="${i}" min="40" max="400" value="100" step="1"></div>`;
     }
     fmContainer.innerHTML = html;
     const section = grid1.closest('.rack-section');
@@ -378,13 +404,8 @@ function initFMExtension() {
 function refreshFMFaders() {
     const container = document.getElementById('fm-faders-container');
     if(!container) return;
-    
-    if(currentTrackIndex === 4) {
-        container.classList.add('visible');
-    } else {
-        container.classList.remove('visible');
-        return; 
-    }
+    if(currentTrackIndex === 4) container.classList.add('visible');
+    else { container.classList.remove('visible'); return; }
 
     const faders = container.querySelectorAll('.fm-freq-fader');
     const offset = currentPageSeq1 * 16; 
@@ -397,11 +418,8 @@ function refreshFMFaders() {
         const label = f.previousElementSibling;
         if(label) label.innerText = val;
         
-        if(realIndex >= window.masterLength) {
-            f.disabled = true; f.style.opacity = "0.2";
-        } else {
-            f.disabled = false; f.style.opacity = "1";
-        }
+        if(realIndex >= window.masterLength) { f.disabled = true; f.style.opacity = "0.2"; } 
+        else { f.disabled = false; f.style.opacity = "1"; }
     });
 }
 
@@ -410,7 +428,7 @@ function refreshFMFaders() {
    MAIN INIT 
    ========================================== */
 window.addEventListener('load', () => {
-    console.log("Initialisation Logic V16 (Fixed)...");
+    console.log("Initialisation Logic V21 (FULL SYNC)...");
     
     if (!window.audioCtx) console.error("ERREUR : audio.js manquant !");
 
@@ -433,7 +451,8 @@ window.addEventListener('load', () => {
     currentTrackIndex = 0; 
     showParamsForTrack(0); 
     
-    if(typeof initStorageSystem === 'function') initStorageSystem();
+    // CHARGEMENT DU SYSTEME MPC
+    if(typeof initMPCMemory === 'function') initMPCMemory();
     
     refreshGridVisuals();
     refreshFadersVisuals(2);
@@ -441,11 +460,39 @@ window.addEventListener('load', () => {
     const playBtn = document.getElementById('master-play-stop');
     if (playBtn) playBtn.onclick = () => togglePlay(playBtn);
    
-    if(typeof initFreqSnapshots === 'function') initFreqSnapshots();
-    
     setTimeout(initAudioPreview, 800);
 
-    console.log("Logic V16 : Prêt.");
+    /* ==========================================
+       LISTENERS MANUELS (Au cas où bindControls rate)
+       ========================================== */
+    
+    // 1. KICK LISTENERS
+    document.getElementById('kick-pitch').addEventListener('input', (e) => window.kickSettings.pitch = parseFloat(e.target.value));
+    document.getElementById('kick-decay').addEventListener('input', (e) => window.kickSettings.decay = parseFloat(e.target.value));
+    document.getElementById('kick-level').addEventListener('input', (e) => window.kickSettings.level = parseFloat(e.target.value));
+    
+    // RUMBLE (Vérification présence via Module)
+    // On n'ajoute PAS de listener ici car modules.js s'en occupe déjà lors de la création de 'kick-rumble-amount'
+
+    // 2. SNARE LISTENERS
+    document.getElementById('snare-tone').addEventListener('input', (e) => window.snareSettings.tone = parseFloat(e.target.value));
+    document.getElementById('snare-snappy').addEventListener('input', (e) => window.snareSettings.snappy = parseFloat(e.target.value));
+    document.getElementById('snare-level').addEventListener('input', (e) => window.snareSettings.level = parseFloat(e.target.value));
+
+    // 3. HI-HATS LISTENERS
+    document.getElementById('hhc-tone').addEventListener('input', (e) => window.hhSettings.tone = parseFloat(e.target.value));
+    document.getElementById('hhc-level').addEventListener('input', (e) => window.hhSettings.levelClose = parseFloat(e.target.value));
+    document.getElementById('hho-decay').addEventListener('input', (e) => window.hhSettings.decayOpen = parseFloat(e.target.value));
+    document.getElementById('hho-level').addEventListener('input', (e) => window.hhSettings.levelOpen = parseFloat(e.target.value));
+
+    // 4. FM DRUM LISTENERS
+    document.getElementById('fm-carrier').addEventListener('input', (e) => window.fmSettings.carrierPitch = parseFloat(e.target.value));
+    document.getElementById('fm-mod').addEventListener('input', (e) => window.fmSettings.modPitch = parseFloat(e.target.value));
+    document.getElementById('fm-amt').addEventListener('input', (e) => window.fmSettings.fmAmount = parseFloat(e.target.value));
+    document.getElementById('fm-decay').addEventListener('input', (e) => window.fmSettings.decay = parseFloat(e.target.value));
+    document.getElementById('fm-level').addEventListener('input', (e) => window.fmSettings.level = parseFloat(e.target.value));
+
+    console.log("✅ All Drum Knobs Synced.");
 });
 
 // --- PLAYBACK ENGINE ---
@@ -456,24 +503,17 @@ function togglePlay(btn) {
     if (window.isPlaying) {
         window.isPlaying = false; 
         clearTimeout(masterTimer); 
-        btn.innerText = "PLAY / STOP";
-        btn.style.background = "#222"; 
-        btn.style.color = "#fff";
-        globalTickCount = 0;
-        globalMasterStep = 0;
+        btn.innerText = "PLAY / STOP"; btn.style.background = "#222"; btn.style.color = "#fff";
+        globalTickCount = 0; globalMasterStep = 0;
         trackCursors = [0, 0, 0, 0, 0]; 
         currentSynthStep = 0;
         refreshGridVisuals(); 
     } else {
         if (window.audioCtx.state === 'suspended') window.audioCtx.resume();
         window.isPlaying = true; 
-        btn.innerText = "STOP";
-        btn.style.background = "#00f3ff"; 
-        btn.style.color = "#000";
+        btn.innerText = "STOP"; btn.style.background = "#00f3ff"; btn.style.color = "#000";
         trackCursors = [0, 0, 0, 0, 0];
-        globalMasterStep = 0;
-        globalTickCount = 0;
-        currentSynthStep = 0;
+        globalMasterStep = 0; globalTickCount = 0; currentSynthStep = 0;
         runMasterClock(); 
     }
 }
@@ -525,16 +565,12 @@ function triggerSynths(masterStep) {
     if(window.playSynthStep) {
         const isActive2 = window.synthSequences.seq2[masterStep];
         let isAccent2 = false;
-        if(window.synthAccents && window.synthAccents.seq2) {
-            isAccent2 = window.synthAccents.seq2[masterStep];
-        }
+        if(window.synthAccents && window.synthAccents.seq2) isAccent2 = window.synthAccents.seq2[masterStep];
         if(window.freqDataSeq2) window.playSynthStep(masterStep, window.freqDataSeq2[masterStep], 2, isActive2, isAccent2);
 
         const isActive3 = window.synthSequences.seq3[masterStep];
         let isAccent3 = false;
-        if(window.synthAccents && window.synthAccents.seq3) {
-            isAccent3 = window.synthAccents.seq3[masterStep];
-        }
+        if(window.synthAccents && window.synthAccents.seq3) isAccent3 = window.synthAccents.seq3[masterStep];
         if(window.freqDataSeq3) window.playSynthStep(masterStep, window.freqDataSeq3[masterStep], 3, isActive3, isAccent3);
     }
 }
@@ -565,6 +601,7 @@ function updatePlayheads() {
     });
 }
 
+// --- REFRESH GRID VISUALS (AVEC FIX M/m) ---
 window.refreshGridVisuals = function() {
     const pads = document.querySelectorAll('#grid-seq1 .step-pad');
     const accents = document.querySelectorAll('#grid-seq1 .accent-pad');
@@ -609,30 +646,28 @@ window.refreshGridVisuals = function() {
             const led = pad.querySelector('.led'); if (led) led.style.background = isActive ? color : "#330000"; 
         });
 
-        // NOUVEAU : UPDATE DES BOUTONS ACCORDS (SEQ 3 SEULEMENT)
         if (seqNum === 3) {
             const chordBtns = document.querySelectorAll('#grid-seq3 .chord-type-btn');
             chordBtns.forEach((btn, i) => {
-                const realIndex = i + offsetS;
-                btn.dataset.realIndex = realIndex;
+                const realIndex = i + offsetS; btn.dataset.realIndex = realIndex;
                 if (realIndex >= window.masterLength) { btn.style.opacity = "0.2"; btn.style.pointerEvents = "none"; }
                 else { btn.style.opacity = "1"; btn.style.pointerEvents = "auto"; }
                 
-                // CHECK ETAT MAJEUR / MINEUR
                 const isMaj = window.chordQualitySeq3[realIndex];
-                if (isMaj) {
-                    btn.style.background = "#ffaa00"; // Orange (MAJEUR)
-                    btn.style.borderColor = "#ffaa00";
-                } else {
-                    btn.style.background = "#222"; // Sombre (MINEUR)
-                    btn.style.borderColor = "#444";
+                if (isMaj) { 
+                    btn.style.background = "#ffaa00"; btn.style.borderColor = "#ffaa00"; btn.style.color = "#000";
+                    btn.innerText = "M";      
+                } 
+                else { 
+                    btn.style.background = "#222"; btn.style.borderColor = "#444"; btn.style.color = "#555";
+                    btn.innerText = "m";      
                 }
             });
         }
     };
     updateSynthGrid('seq2', 2, currentPageSeq2);
     if(window.synthSequences.seq3) updateSynthGrid('seq3', 3, currentPageSeq3);
-   refreshFMFaders();
+    refreshFMFaders();
 };
 
 window.refreshFadersVisuals = function(seqId) {
@@ -665,16 +700,10 @@ document.addEventListener('mousedown', (e) => {
         window.drumAccents[currentTrackIndex][idx] = !window.drumAccents[currentTrackIndex][idx];
         accentBtn.classList.toggle('active');
     }
-
-    // CLICK SUR LE NOUVEAU BOUTON ACCORD
     const chordTypeBtn = e.target.closest('.chord-type-btn');
     if (chordTypeBtn) {
         const idx = parseInt(chordTypeBtn.dataset.realIndex);
-        if (!isNaN(idx)) {
-            // TOGGLE MAJEUR <-> MINEUR
-            window.chordQualitySeq3[idx] = !window.chordQualitySeq3[idx];
-            refreshGridVisuals();
-        }
+        if (!isNaN(idx)) { window.chordQualitySeq3[idx] = !window.chordQualitySeq3[idx]; refreshGridVisuals(); }
     }
 });
 
@@ -698,69 +727,587 @@ document.addEventListener('click', (e) => {
     if (e.target.classList.contains('btn-random')) { const target = parseInt(e.target.dataset.target); const selector = (target === 3) ? '#grid-freq-seq3 .freq-fader' : '#grid-freq-seq2 .freq-fader'; const faders = document.querySelectorAll(selector); const btn = e.target; btn.style.background = (target === 3) ? "#a855f7" : "#00f3ff"; btn.style.color = "#000"; setTimeout(() => { btn.style.background = ""; btn.style.color = ""; }, 100); faders.forEach(fader => { const randomFreq = Math.floor(Math.random() * (880 - 50) + 50); fader.value = randomFreq; fader.dispatchEvent(new Event('input', { bubbles: true })); }); return; }
 });
 
-// --- SNAPSHOTS (MEMORY) ---
-function initFreqSnapshots() {
-    window.freqSnapshots = [null, null, null, null]; 
-    let isSnapshotSaveMode = false;
-    const btnSave = document.getElementById('btn-snap-save');
-    const slots = document.querySelectorAll('.btn-snap-slot');
-    if(!btnSave) return;
-    btnSave.onclick = () => { isSnapshotSaveMode = !isSnapshotSaveMode; btnSave.classList.toggle('saving', isSnapshotSaveMode); };
-    slots.forEach(slotBtn => {
-        slotBtn.onclick = () => {
-            const slotIndex = parseInt(slotBtn.dataset.slot);
-            if (isSnapshotSaveMode) {
-                window.freqSnapshots[slotIndex] = [...window.freqDataSeq2];
-                slotBtn.classList.add('has-data');
-                isSnapshotSaveMode = false;
-                btnSave.classList.remove('saving');
-                slotBtn.classList.add('flash-load');
-                setTimeout(() => slotBtn.classList.remove('flash-load'), 200);
-            } else {
-                if (window.freqSnapshots[slotIndex]) {
-                    window.freqDataSeq2 = [...window.freqSnapshots[slotIndex]];
-                    refreshFadersVisuals(2);
-                    slotBtn.classList.add('flash-load');
-                    setTimeout(() => slotBtn.classList.remove('flash-load'), 200);
+/* ==========================================
+   MPC MEMORY SYSTEM IMPLEMENTATION (V18)
+   ========================================== */
+
+function initMPCMemory() {
+    console.log("Init MPC Memory 8 Slots (With Persistence)...");
+    
+    const savedData = localStorage.getItem('hardbeat_memories');
+    if (savedData) {
+        try {
+            window.memorySlots = JSON.parse(savedData);
+            console.log("Mémoires restaurées depuis le disque.");
+        } catch (e) {
+            console.error("Erreur lecture mémoire", e);
+        }
+    }
+
+    const btnSave = document.getElementById('btn-mem-save');
+    const btnClear = document.getElementById('btn-mem-clear');
+    const pads = document.querySelectorAll('.mem-pad');
+
+    if (!btnSave || pads.length === 0) return;
+    
+    updateMemoryVisuals();
+
+    pads.forEach(pad => {
+        pad.addEventListener('click', () => {
+            const slot = parseInt(pad.dataset.slot);
+            handleSlotAction(slot);
+        });
+    });
+
+    btnSave.addEventListener('click', () => {
+        window.isSaveMode = !window.isSaveMode;
+        btnSave.classList.toggle('active', window.isSaveMode);
+        document.querySelectorAll('.mem-pad').forEach(p => p.classList.toggle('save-mode', window.isSaveMode));
+        if(window.isSaveMode) btnClear.classList.remove('active'); 
+    });
+
+   btnClear.addEventListener('click', () => {
+        if(confirm("Vider la séquence actuelle à l'écran ?\n(Vos mémoires sauvegardées ne seront PAS effacées)")) {
+            
+            window.drumSequences = Array.from({ length: 5 }, () => Array(64).fill(false));
+            window.drumAccents = Array.from({ length: 5 }, () => Array(64).fill(false));
+            window.synthSequences.seq2 = Array(64).fill(false);
+            window.synthSequences.seq3 = Array(64).fill(false);
+            if(window.synthAccents.seq2) window.synthAccents.seq2 = Array(64).fill(false);
+            if(window.synthAccents.seq3) window.synthAccents.seq3 = Array(64).fill(false);
+
+            window.masterLength = 16;
+            window.trackLengths = [16, 16, 16, 16, 16];
+
+            document.querySelectorAll('.btn-length').forEach(b => 
+                b.classList.toggle('active', b.dataset.length == "16")
+            );
+
+            currentPageSeq1 = 0; currentPageSeq2 = 0; currentPageSeq3 = 0;
+            if(document.getElementById('page-indicator-seq1')) updatePageIndicator('seq1');
+            if(document.getElementById('page-indicator-seq2')) updatePageIndicator('seq2');
+            if(document.getElementById('page-indicator-seq3')) updatePageIndicator('seq3');
+
+            refreshGridVisuals();
+            refreshFadersVisuals(2);
+            if(document.getElementById('grid-seq3')) refreshFadersVisuals(3);
+
+            window.currentMemorySlot = -1; 
+            updateMemoryVisuals();
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if(e.target.tagName === 'INPUT') return;
+        const key = e.key;
+        if(key >= '1' && key <= '8') {
+            const slotIndex = parseInt(key) - 1;
+            handleSlotAction(slotIndex);
+        }
+    });
+
+   pads.forEach(pad => {
+        pad.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); 
+            const slot = parseInt(pad.dataset.slot);
+            
+            if (window.memorySlots[slot] !== null) {
+                if(confirm(`Vider seulement la mémoire ${slot + 1} ?`)) {
+                    window.memorySlots[slot] = null; 
+                    localStorage.setItem('hardbeat_memories', JSON.stringify(window.memorySlots));
+
+                    if (window.currentMemorySlot === slot) {
+                        window.location.reload();
+                    } else {
+                        updateMemoryVisuals();
+                    }
                 }
             }
-        };
+        });
     });
 }
 
-window.loadPreset = function(presetKey) {
-    if (!window.presets || !window.presets[presetKey]) {
-        console.error("Preset introuvable ou presets.js non chargé.");
+function handleSlotAction(slotIndex) {
+    if (window.isSaveMode) {
+        saveToSlot(slotIndex);
+        const pad = document.querySelector(`.mem-pad[data-slot="${slotIndex}"]`);
+        if(pad) {
+            pad.style.backgroundColor = "#fff";
+            setTimeout(() => { pad.style.backgroundColor = ""; updateMemoryVisuals(); }, 200);
+        }
+        window.isSaveMode = false;
+        document.getElementById('btn-mem-save').classList.remove('active');
+        document.querySelectorAll('.mem-pad').forEach(p => p.classList.remove('save-mode'));
+
+    } else {
+        if (window.memorySlots[slotIndex] !== null) {
+            loadFromSlot(slotIndex);
+            window.currentMemorySlot = slotIndex;
+            updateMemoryVisuals();
+        }
+    }
+}
+
+// --- SAVE TO SLOT (AVEC SOLOS + RUMBLE + MUTES) ---
+function saveToSlot(index) {
+    window.currentMemorySlot = index;
+
+    const state = {
+        global: {
+            len: window.masterLength,
+            trackLens: [...window.trackLengths],
+            bpm: parseInt(document.getElementById('display-bpm1').innerText),
+            swing: globalSwing
+        },
+        controls: {
+            isChordMode: window.isChordModeSeq3, 
+            delay: parseFloat(document.getElementById('global-delay-amt').value) || 0,
+            
+            s2: { ...window.paramsSeq2, vol: window.synthVol2 }, 
+            s3: { ...window.paramsSeq3, vol: window.synthVol3 },
+
+            kick: { ...window.kickSettings },
+            snare: { ...window.snareSettings },
+            hh: { ...window.hhSettings },
+            fm: { ...window.fmSettings }
+        },
+        drums: {
+            seq: window.drumSequences.map(s => [...s]),
+            acc: window.drumAccents.map(s => [...s])
+        },
+        synths: {
+            seq2: [...window.synthSequences.seq2],
+            seq3: [...window.synthSequences.seq3],
+            acc2: window.synthAccents.seq2 ? [...window.synthAccents.seq2] : Array(64).fill(false),
+            acc3: window.synthAccents.seq3 ? [...window.synthAccents.seq3] : Array(64).fill(false)
+        },
+        freqs: {
+            seq2: [...window.freqDataSeq2],
+            seq3: [...window.freqDataSeq3],
+            fm: [...window.fmFreqData]
+        },
+        chords: {
+            qual: [...window.chordQualitySeq3]
+        },
+        mutes: [...window.trackMutes],
+        solos: [...window.trackSolos] 
+    };
+    
+    window.memorySlots[index] = state;
+    localStorage.setItem('hardbeat_memories', JSON.stringify(window.memorySlots));
+    console.log(`Slot ${index + 1} Saved (WITH SOLOS/MUTES/RUMBLE).`);
+}
+
+// --- LOAD FROM SLOT (AVEC SOLOS + RUMBLE + MUTES) ---
+function loadFromSlot(index) {
+    const state = window.memorySlots[index];
+    if (!state) return;
+
+    const forceUpdateKnob = (id, val) => {
+        const el = document.getElementById(id);
+        if (el && typeof val === 'number') {
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+    };
+
+    if (state.global) {
+        window.masterLength = state.global.len || 16;
+        window.trackLengths = state.global.trackLens || [16,16,16,16,16];
+        document.querySelectorAll('.btn-length').forEach(btn => {
+            const val = parseInt(btn.dataset.length);
+            btn.classList.toggle('active', val === window.masterLength);
+        });
+        if (state.global.bpm) document.getElementById('display-bpm1').innerText = state.global.bpm;
+        if (state.global.swing !== undefined) {
+            globalSwing = state.global.swing;
+            forceUpdateKnob('global-swing', globalSwing * 100);
+        }
+    }
+
+    if (state.controls) {
+        if(state.controls.delay !== undefined) forceUpdateKnob('global-delay-amt', state.controls.delay);
+
+        window.isChordModeSeq3 = state.controls.isChordMode;
+        const btnChord = document.getElementById('btn-chord-seq3');
+        if (btnChord) {
+            if(window.isChordModeSeq3) {
+                 btnChord.innerText = "CHORD: ON"; btnChord.style.background = "#a855f7"; btnChord.style.color = "#000";
+            } else {
+                 btnChord.innerText = "CHORD: OFF"; btnChord.style.background = "transparent"; btnChord.style.color = "#a855f7";
+            }
+        }
+
+        if(state.controls.s2) {
+            window.paramsSeq2 = { ...state.controls.s2 };
+            window.synthVol2 = state.controls.s2.vol;
+            forceUpdateKnob('synth2-disto', window.paramsSeq2.disto);
+            forceUpdateKnob('synth2-res', window.paramsSeq2.res);
+            forceUpdateKnob('synth2-cutoff', window.paramsSeq2.cutoff);
+            forceUpdateKnob('synth2-decay', window.paramsSeq2.decay);
+            forceUpdateKnob('vol-seq2', window.synthVol2);
+        }
+
+        if(state.controls.s3) {
+            window.paramsSeq3 = { ...state.controls.s3 };
+            window.synthVol3 = state.controls.s3.vol;
+            forceUpdateKnob('synth3-disto', window.paramsSeq3.disto);
+            forceUpdateKnob('synth3-res', window.paramsSeq3.res);
+            forceUpdateKnob('synth3-cutoff', window.paramsSeq3.cutoff);
+            forceUpdateKnob('synth3-decay', window.paramsSeq3.decay);
+            forceUpdateKnob('vol-seq3', window.synthVol3);
+        }
+
+        if(state.controls.kick) {
+            window.kickSettings = { ...state.controls.kick };
+            forceUpdateKnob('kick-pitch', window.kickSettings.pitch);
+            forceUpdateKnob('kick-decay', window.kickSettings.decay);
+            forceUpdateKnob('kick-level', window.kickSettings.level);
+            // AJOUT DU RUMBLE ICI (VISE LE MODULE)
+            if (window.kickSettings.rumble !== undefined) {
+                forceUpdateKnob('kick-rumble-amount', window.kickSettings.rumble);
+            }
+        }
+
+        if(state.controls.snare) {
+            window.snareSettings = { ...state.controls.snare };
+            forceUpdateKnob('snare-tone', window.snareSettings.tone);
+            forceUpdateKnob('snare-snappy', window.snareSettings.snappy);
+            forceUpdateKnob('snare-level', window.snareSettings.level);
+        }
+        if(state.controls.hh) {
+            window.hhSettings = { ...state.controls.hh };
+            forceUpdateKnob('hhc-tone', window.hhSettings.tone);
+            forceUpdateKnob('hhc-level', window.hhSettings.levelClose);
+            forceUpdateKnob('hho-decay', window.hhSettings.decayOpen);
+            forceUpdateKnob('hho-level', window.hhSettings.levelOpen);
+        }
+        if(state.controls.fm) {
+            window.fmSettings = { ...state.controls.fm };
+            forceUpdateKnob('fm-carrier', window.fmSettings.carrierPitch);
+            forceUpdateKnob('fm-mod', window.fmSettings.modPitch);
+            forceUpdateKnob('fm-amt', window.fmSettings.fmAmount);
+            forceUpdateKnob('fm-decay', window.fmSettings.decay);
+            forceUpdateKnob('fm-level', window.fmSettings.level);
+        }
+    }
+
+    window.drumSequences = state.drums.seq.map(s => [...s]);
+    window.drumAccents = state.drums.acc.map(s => [...s]);
+    window.synthSequences.seq2 = [...state.synths.seq2];
+    window.synthSequences.seq3 = [...state.synths.seq3];
+    if(state.synths.acc2) window.synthAccents.seq2 = [...state.synths.acc2];
+    if(state.synths.acc3) window.synthAccents.seq3 = [...state.synths.acc3];
+    
+    window.freqDataSeq2 = [...state.freqs.seq2];
+    window.freqDataSeq3 = [...state.freqs.seq3];
+    if(state.freqs.fm) window.fmFreqData = [...state.freqs.fm];
+    
+    if(state.chords && state.chords.qual) window.chordQualitySeq3 = [...state.chords.qual];
+    
+    if(state.mutes) {
+        window.trackMutes = [...state.mutes];
+        document.querySelectorAll('.btn-mute').forEach((btn, i) => {
+            if(i < 5) btn.classList.toggle('active', window.trackMutes[i]);
+        });
+    }
+
+    if(state.solos) {
+        window.trackSolos = [...state.solos];
+    } else {
+        window.trackSolos = [false, false, false, false, false];
+    }
+    document.querySelectorAll('.btn-solo').forEach((btn, i) => {
+        if(i < 5) btn.classList.toggle('active', window.trackSolos[i]);
+    });
+
+    currentPageSeq1 = 0; currentPageSeq2 = 0; currentPageSeq3 = 0;
+    if(document.getElementById('page-indicator-seq1')) updatePageIndicator('seq1');
+    if(document.getElementById('page-indicator-seq2')) updatePageIndicator('seq2');
+    if(document.getElementById('page-indicator-seq3')) updatePageIndicator('seq3');
+
+    const stepIds = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
+    stepIds.forEach((id, i) => { 
+        const el = document.getElementById(id); 
+        if(el && window.trackLengths[i]) el.value = window.trackLengths[i]; 
+    });
+
+    refreshGridVisuals();
+    refreshFadersVisuals(2);
+    if(document.getElementById('grid-seq3')) refreshFadersVisuals(3);
+    if(typeof refreshFMFaders === 'function') refreshFMFaders();
+
+    console.log(`Slot ${index + 1} Loaded.`);
+}
+
+function updateMemoryVisuals() {
+    const pads = document.querySelectorAll('.mem-pad');
+    pads.forEach(pad => {
+        const slot = parseInt(pad.dataset.slot);
+        pad.classList.remove('has-data', 'playing');
+        if (window.memorySlots[slot] !== null) {
+            pad.classList.add('has-data');
+        }
+        if (slot === window.currentMemorySlot) {
+            pad.classList.add('playing');
+        }
+    });
+}
+
+
+/* ==========================================
+   PRESET LOADER (VERSION ULTIME V19 - TOTAL RECALL)
+   ========================================== */
+window.loadPreset = function(val) {
+    if (!val) return;
+
+    const forceResetKnob = (id, val, updateFunc) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = val;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (updateFunc) updateFunc(val);
+    };
+
+    if (val === 'init') {
+        if(confirm("Réinitialiser tout (Sons, Patterns, Réglages) ?")) {
+            
+            window.currentMemorySlot = -1;
+            if(typeof updateMemoryVisuals === 'function') updateMemoryVisuals();
+
+            window.drumSequences = Array.from({ length: 5 }, () => Array(64).fill(false));
+            window.drumAccents = Array.from({ length: 5 }, () => Array(64).fill(false));
+            window.synthSequences.seq2 = Array(64).fill(false);
+            window.synthSequences.seq3 = Array(64).fill(false);
+            if(window.synthAccents.seq2) window.synthAccents.seq2 = Array(64).fill(false);
+            if(window.synthAccents.seq3) window.synthAccents.seq3 = Array(64).fill(false);
+            
+            window.freqDataSeq2.fill(440);
+            window.freqDataSeq3.fill(440);
+            if(window.fmFreqData) window.fmFreqData.fill(100); 
+            window.chordQualitySeq3.fill(false); 
+            
+            window.masterLength = 16;
+            window.trackLengths = [16,16,16,16,16];
+            
+            window.paramsSeq2 = { disto: 0, res: 5, cutoff: 4, decay: 0.2 };
+            window.paramsSeq3 = { disto: 0, res: 8, cutoff: 2, decay: 0.4 };
+            window.synthVol2 = 0.6;
+            window.synthVol3 = 0.6;
+            window.isChordModeSeq3 = false;
+
+            document.querySelectorAll('.btn-length').forEach(b => b.classList.toggle('active', b.dataset.length == "16"));
+            document.querySelectorAll('.btn-mute').forEach(b => b.classList.remove('active'));
+            window.trackMutes = [false,false,false,false,false];
+
+            const btnChord = document.getElementById('btn-chord-seq3');
+            if(btnChord) {
+                btnChord.innerText = "CHORD: OFF"; 
+                btnChord.style.background = "transparent"; 
+                btnChord.style.color = "#a855f7";
+            }
+
+            forceResetKnob('synth2-disto', 0, window.updateSynth2Disto);
+            forceResetKnob('synth2-res', 5, window.updateSynth2Res);
+            forceResetKnob('synth2-cutoff', 4, window.updateSynth2Cutoff);
+            forceResetKnob('synth2-decay', 0.2, window.updateSynth2Decay);
+            forceResetKnob('vol-seq2', 0.6, null);
+
+            forceResetKnob('synth3-disto', 0, window.updateSynth3Disto);
+            forceResetKnob('synth3-res', 8, window.updateSynth3Res);
+            forceResetKnob('synth3-cutoff', 2, window.updateSynth3Cutoff);
+            forceResetKnob('synth3-decay', 0.4, window.updateSynth3Decay);
+            forceResetKnob('vol-seq3', 0.6, null);
+
+            forceResetKnob('global-delay-amt', 0, window.updateDelayAmount);
+
+            refreshGridVisuals();
+            refreshFadersVisuals(2);
+            if(document.getElementById('grid-seq3')) refreshFadersVisuals(3);
+            if(typeof refreshFMFaders === 'function') refreshFMFaders();
+        }
+        document.getElementById('preset-selector').blur();
         return;
     }
-    const p = window.presets[presetKey];
-    console.log("Loading Preset:", p.name);
-    if(document.getElementById('display-bpm1')) document.getElementById('display-bpm1').innerText = p.bpm;
-    window.masterLength = p.masterLength || 16;
-    window.trackLengths = p.trackLengths || [16, 16, 16, 16, 16]; 
-    window.drumSequences = p.drums.seq.map(s => [...s]); 
-    window.drumAccents = p.drums.accents ? p.drums.accents.map(s => [...s]) : Array.from({length:5}, () => Array(64).fill(false));
-    window.synthSequences.seq2 = [...p.synths.seq2];
-    window.synthSequences.seq3 = [...p.synths.seq3];
-    window.freqDataSeq2 = p.freqs2 ? [...p.freqs2] : Array(64).fill(440);
-    window.freqDataSeq3 = p.freqs3 ? [...p.freqs3] : Array(64).fill(440);
-    if (p.accents2) { window.synthAccents.seq2 = [...p.accents2]; } else { window.synthAccents.seq2 = Array(64).fill(false); }
-    if (p.accents3) { window.synthAccents.seq3 = [...p.accents3]; } else { window.synthAccents.seq3 = Array(64).fill(false); }
+
+    const lib = window.FACTORY_PRESETS || window.PRESETS;
     
-    // NOUVEAU : CHARGEMENT MAJEUR/MINEUR (SI PRESENT DANS PRESET)
-    if (p.chordQuality) {
-        window.chordQualitySeq3 = [...p.chordQuality];
-    } else {
-        window.chordQualitySeq3 = Array(64).fill(false);
+    if (!lib || !lib[val]) {
+        console.error("Preset introuvable : " + val);
+        return;
     }
 
-    const inputs = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
-    inputs.forEach((id, i) => { const el = document.getElementById(id); if(el) el.value = window.trackLengths[i]; });
+    window.currentMemorySlot = -1;
+    if(typeof updateMemoryVisuals === 'function') updateMemoryVisuals();
 
-    if (typeof refreshGridVisuals === 'function') refreshGridVisuals();
-    if (typeof refreshFadersVisuals === 'function') {
-        refreshFadersVisuals(2);
-        if(document.getElementById('grid-freq-seq3')) refreshFadersVisuals(3);
+    const p = lib[val];
+    console.log("Loading Factory Preset:", p.name);
+
+    if (p.drums && p.drums.seq) {
+        window.drumSequences = p.drums.seq.map(seq => {
+            const arr = new Array(64).fill(false);
+            seq.forEach((val, i) => { if(i < 64) arr[i] = val; });
+            return arr;
+        });
     }
-    console.log("Preset chargé avec succès !");
+    
+    if (p.drums && (p.drums.accents || p.drums.acc)) {
+        const src = p.drums.accents || p.drums.acc; 
+        window.drumAccents = src.map(seq => {
+            const arr = new Array(64).fill(false);
+            seq.forEach((val, i) => { if(i < 64) arr[i] = val; });
+            return arr;
+        });
+    }
+
+    if (p.drums && p.drums.fmFreqs) {
+        window.fmFreqData = [...p.drums.fmFreqs];
+        while(window.fmFreqData.length < 64) window.fmFreqData.push(100);
+    }
+
+    if (p.synths) {
+        if (p.synths.seq2) {
+            window.synthSequences.seq2 = new Array(64).fill(false);
+            p.synths.seq2.forEach((val, i) => { if(i < 64) window.synthSequences.seq2[i] = val; });
+        }
+        if (p.synths.seq3) {
+            window.synthSequences.seq3 = new Array(64).fill(false);
+            p.synths.seq3.forEach((val, i) => { if(i < 64) window.synthSequences.seq3[i] = val; });
+        }
+        if (p.synths.acc2) window.synthAccents.seq2 = [...p.synths.acc2];
+        else if (p.accents2) window.synthAccents.seq2 = [...p.accents2];
+
+        if (p.synths.acc3) window.synthAccents.seq3 = [...p.synths.acc3];
+        else if (p.accents3) window.synthAccents.seq3 = [...p.accents3]; 
+    }
+
+    if (p.freqs && Array.isArray(p.freqs.seq2)) window.freqDataSeq2 = [...p.freqs.seq2];
+    else if (p.freqs2) window.freqDataSeq2 = [...p.freqs2];
+    else window.freqDataSeq2.fill(440);
+
+    if (p.freqs && Array.isArray(p.freqs.seq3)) window.freqDataSeq3 = [...p.freqs.seq3];
+    else if (p.freqs3) window.freqDataSeq3 = [...p.freqs3];
+    else window.freqDataSeq3.fill(440);
+
+    if (p.chords && p.chords.qual) window.chordQualitySeq3 = [...p.chords.qual];
+    else window.chordQualitySeq3.fill(false);
+
+
+    if (p.bpm) document.getElementById('display-bpm1').innerText = p.bpm;
+    
+    if (p.swing !== undefined) {
+        globalSwing = p.swing / 100;
+        document.getElementById('global-swing').value = p.swing;
+    }
+
+    if (p.masterLength) {
+        window.masterLength = p.masterLength;
+        document.querySelectorAll('.btn-length').forEach(btn => {
+            const val = parseInt(btn.dataset.length);
+            btn.classList.toggle('active', val === window.masterLength);
+        });
+    }
+    
+    if (p.trackLengths) window.trackLengths = [...p.trackLengths];
+
+
+    if (p.controls) {
+        window.isChordModeSeq3 = p.controls.isChordMode;
+        const btnChord = document.getElementById('btn-chord-seq3');
+        if (btnChord) {
+            if(window.isChordModeSeq3) {
+                 btnChord.innerText = "CHORD: ON"; btnChord.style.background = "#a855f7"; btnChord.style.color = "#000";
+            } else {
+                 btnChord.innerText = "CHORD: OFF"; btnChord.style.background = "transparent"; btnChord.style.color = "#a855f7";
+            }
+        }
+
+        if(p.controls.s2) {
+            window.paramsSeq2 = { ...p.controls.s2 };
+            window.synthVol2 = p.controls.s2.vol;
+            forceResetKnob('synth2-disto', window.paramsSeq2.disto, window.updateSynth2Disto);
+            forceResetKnob('synth2-res', window.paramsSeq2.res, window.updateSynth2Res);
+            forceResetKnob('synth2-cutoff', window.paramsSeq2.cutoff, window.updateSynth2Cutoff);
+            forceResetKnob('synth2-decay', window.paramsSeq2.decay, window.updateSynth2Decay);
+            forceResetKnob('vol-seq2', window.synthVol2, null);
+        }
+        if(p.controls.s3) {
+            window.paramsSeq3 = { ...p.controls.s3 };
+            window.synthVol3 = p.controls.s3.vol;
+            forceResetKnob('synth3-disto', window.paramsSeq3.disto, window.updateSynth3Disto);
+            forceResetKnob('synth3-res', window.paramsSeq3.res, window.updateSynth3Res);
+            forceResetKnob('synth3-cutoff', window.paramsSeq3.cutoff, window.updateSynth3Cutoff);
+            forceResetKnob('synth3-decay', window.paramsSeq3.decay, window.updateSynth3Decay);
+            forceResetKnob('vol-seq3', window.synthVol3, null);
+        }
+        if(p.controls.delay !== undefined) forceResetKnob('global-delay-amt', p.controls.delay, window.updateDelayAmount);
+
+        if(p.controls.kick) {
+            window.kickSettings = { ...p.controls.kick };
+            forceResetKnob('kick-pitch', window.kickSettings.pitch);
+            forceResetKnob('kick-decay', window.kickSettings.decay);
+            forceResetKnob('kick-level', window.kickSettings.level);
+        }
+        if(p.controls.snare) {
+            window.snareSettings = { ...p.controls.snare };
+            forceResetKnob('snare-tone', window.snareSettings.tone);
+            forceResetKnob('snare-snappy', window.snareSettings.snappy);
+            forceResetKnob('snare-level', window.snareSettings.level);
+        }
+        if(p.controls.hh) {
+            window.hhSettings = { ...p.controls.hh };
+            forceResetKnob('hhc-tone', window.hhSettings.tone);
+            forceResetKnob('hhc-level', window.hhSettings.levelClose);
+            forceResetKnob('hho-decay', window.hhSettings.decayOpen);
+            forceResetKnob('hho-level', window.hhSettings.levelOpen);
+        }
+        if(p.controls.fm) {
+            window.fmSettings = { ...p.controls.fm };
+            forceResetKnob('fm-carrier', window.fmSettings.carrierPitch);
+            forceResetKnob('fm-mod', window.fmSettings.modPitch);
+            forceResetKnob('fm-amt', window.fmSettings.fmAmount);
+            forceResetKnob('fm-decay', window.fmSettings.decay);
+            forceResetKnob('fm-level', window.fmSettings.level);
+        }
+    }
+
+    currentPageSeq1 = 0; currentPageSeq2 = 0; currentPageSeq3 = 0;
+    
+    if(document.getElementById('page-indicator-seq1')) updatePageIndicator('seq1');
+    if(document.getElementById('page-indicator-seq2')) updatePageIndicator('seq2');
+    if(document.getElementById('page-indicator-seq3')) updatePageIndicator('seq3');
+
+    const ids = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
+    ids.forEach((id, i) => { 
+        const el = document.getElementById(id); 
+        if(el && window.trackLengths[i]) el.value = window.trackLengths[i]; 
+    });
+
+    refreshGridVisuals();
+    refreshFadersVisuals(2);
+    if(document.getElementById('grid-seq3')) refreshFadersVisuals(3);
+    if(typeof refreshFMFaders === 'function') refreshFMFaders();
+    
+    document.getElementById('preset-selector').blur();
 };
+
+const btnExport = document.getElementById('btn-export-file');
+const btnImport = document.getElementById('btn-import-file');
+const fileInput = document.getElementById('file-upload');
+
+if (btnExport) {
+    btnExport.addEventListener('click', () => {
+        if (IO && IO.exportPreset) IO.exportPreset();
+    });
+}
+
+if (btnImport && fileInput) {
+    btnImport.addEventListener('click', () => {
+        fileInput.click(); 
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        if (IO && IO.importPreset) IO.importPreset(e);
+    });
+}
