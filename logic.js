@@ -100,16 +100,30 @@ function setupLengthControls() {
     const btns = document.querySelectorAll('.btn-length');
     btns.forEach(btn => {
         btn.addEventListener('click', () => {
+            // Gestion visuelle des boutons
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             
             const newLength = parseInt(btn.dataset.length);
             window.masterLength = newLength;
 
+            // Mettre à jour la logique interne ET les sliders visuels
+            const stepIds = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
+            
             for(let i=0; i<5; i++) {
+                // 1. Mise à jour de la variable logique
                 window.trackLengths[i] = newLength;
                 if (trackCursors[i] >= newLength) trackCursors[i] = 0;
+
+                // 2. FORCE UPDATE DU SLIDER (Le Fix Important)
+                const el = document.getElementById(stepIds[i]);
+                if(el) {
+                    el.max = 64;       // On s'assure que le slider PEUT aller à 64
+                    el.value = newLength; // On le place à la nouvelle valeur
+                }
             }
+
+            // Reset des pages si on réduit la taille
             if (currentPageSeq1 * 16 >= window.masterLength) { currentPageSeq1 = 0; updatePageIndicator('seq1'); }
             if (currentPageSeq2 * 16 >= window.masterLength) { currentPageSeq2 = 0; updatePageIndicator('seq2'); }
             if (currentPageSeq3 * 16 >= window.masterLength) { currentPageSeq3 = 0; updatePageIndicator('seq3'); }
@@ -121,6 +135,9 @@ function setupLengthControls() {
         });
     });
 }
+
+
+
 function setupPageNavigation() {
     const p1 = document.getElementById('btn-prev-page-seq1');
     const n1 = document.getElementById('btn-next-page-seq1');
@@ -465,6 +482,16 @@ window.addEventListener('load', () => {
     /* ==========================================
        LISTENERS MANUELS (Au cas où bindControls rate)
        ========================================== */
+
+// --- FORCE UNLOCK SLIDERS (CORRECTIF KICK BLOQUÉ) ---
+    const stepIds = ['kick-steps', 'snare-steps', 'hhc-steps', 'hho-steps', 'fm-steps'];
+    stepIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.max = 64; // On force la capacité à 64
+            el.value = window.masterLength; // On aligne sur le master actuel
+        }
+    });
     
     // 1. KICK LISTENERS
     document.getElementById('kick-pitch').addEventListener('input', (e) => window.kickSettings.pitch = parseFloat(e.target.value));
