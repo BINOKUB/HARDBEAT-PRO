@@ -843,6 +843,11 @@ function handleSlotAction(slotIndex) {
         if (window.memorySlots[slotIndex] !== null) {
             loadFromSlot(slotIndex);
             window.currentMemorySlot = slotIndex;
+	// --- AJOUT : RESET DE LA SYNCHRONISATION ET ON REPART A 0 ---
+            trackCursors = [0, 0, 0, 0, 0];
+            globalMasterStep = 0;
+            globalTickCount = 0;
+            currentSynthStep = 0;
             updateMemoryVisuals();
         }
     }
@@ -1072,6 +1077,12 @@ window.loadPreset = function(val) {
 
     if (val === 'init') {
         if(confirm("Réinitialiser tout (Sons, Patterns, Réglages) ?")) {
+
+	// --- AJOUT : RESET DE LA SYNCHRONISATION --- REMET A UN LES PAS.
+            trackCursors = [0, 0, 0, 0, 0];
+            globalMasterStep = 0;
+            globalTickCount = 0;
+            currentSynthStep = 0;
             
             window.currentMemorySlot = -1;
             if(typeof updateMemoryVisuals === 'function') updateMemoryVisuals();
