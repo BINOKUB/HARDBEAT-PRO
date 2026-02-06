@@ -337,5 +337,49 @@
         });
     </script>
 
+<a href="https://github.com/BINOKUB/HARDBEAT-PRO/releases/tag/v1.1.0" target="_blank" id="win-dl-btn" style="
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        background-color: rgba(5, 5, 5, 0.9);
+        color: #00f3ff;
+        border: 2px solid #00f3ff;
+        padding: 15px 25px;
+        text-decoration: none;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        z-index: 9999;
+        box-shadow: 0 0 15px rgba(0, 243, 255, 0.2);
+        transition: all 0.3s ease;
+        backdrop-filter: blur(5px);
+        border-radius: 4px;
+    ">
+        <span style="font-size: 24px;">💾</span>
+        <div style="text-align: left;">
+            <div style="font-size: 14px; letter-spacing: 1px;">DOWNLOAD PRO v1.1.0</div>
+            <div style="font-size: 10px; color: #888;">WINDOWS PORTABLE (.EXE)</div>
+        </div>
+    </a>
+
+    <script>
+        // Petit script d'animation pour le bouton flottant
+        const dlBtn = document.getElementById('win-dl-btn');
+        
+        dlBtn.addEventListener('mouseenter', () => {
+            dlBtn.style.transform = 'scale(1.05) translateY(-5px)';
+            dlBtn.style.boxShadow = '0 0 30px rgba(0, 243, 255, 0.6)';
+            dlBtn.style.backgroundColor = 'rgba(0, 243, 255, 0.1)';
+        });
+
+        dlBtn.addEventListener('mouseleave', () => {
+            dlBtn.style.transform = 'scale(1) translateY(0)';
+            dlBtn.style.boxShadow = '0 0 15px rgba(0, 243, 255, 0.2)';
+            dlBtn.style.backgroundColor = 'rgba(5, 5, 5, 0.9)';
+        });
+    </script>
+    
 </body>
 </html>
