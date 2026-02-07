@@ -26,6 +26,97 @@ window.FACTORY_PRESETS = {
     },
 
 
+
+    "fresh": {
+        name: "KOOL &amp; THE GANG - FRESH",
+        masterLength: 64,
+        bpm: 125,
+        swing: 0,
+        trackLengths: [64, 64, 64, 64, 64],
+        
+        // --- V21 CONTROLS (Knobs + Rumble) ---
+        controls: {
+            "isChordMode": false,
+            "delay": 0,
+            "s2": {
+                    "disto": 0,
+                    "res": 5,
+                    "cutoff": 4,
+                    "decay": 0.65,
+                    "vol": 0.6
+                    },
+            "s3": {
+                    "disto": 0,
+                    "res": 8,
+                    "cutoff": 2,
+                    "decay": 0.4,
+                    "vol": 0.6
+            },
+            "kick": {
+                    "pitch": 150,
+                    "decay": 0.5,
+                    "level": 0.8,
+                    "rumble": 0
+            },
+            "snare": {
+                    "snappy": 0.6,
+                    "tone": 1000,
+                    "level": 0.6
+            },
+            "hh": {
+                    "tone": 10000,
+                    "decayClose": 0.05,
+                    "decayOpen": 0.3,
+                    "levelClose": 0.4,
+                    "levelOpen": 0.5
+            },
+            "fm": {
+                    "carrierPitch": 99,
+                    "modPitch": 48,
+                    "fmAmount": 97,
+                    "decay": 0.5,
+                    "level": 0.5
+            }
+},
+
+        // --- V21 MIXER STATE ---
+        mutes: [false, false, false, false, false],
+        solos: [false, false, false, false, false],
+
+        drums: {
+            seq: [
+                makeSeq([0, 8, 16, 24, 32, 40, 48, 56]), // KICK
+                makeSeq([4, 12, 20, 28, 36, 44, 52, 60]), // SNARE
+                makeSeq([0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62]), // HHC
+                makeSeq([]), // HHO
+                makeSeq([0, 2, 4, 6, 8, 12, 14, 16, 18, 20, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62])  // FM
+            ],
+            accents: [
+                makeSeq([]),
+                makeSeq([]),
+                makeSeq([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52, 56, 60]),
+                makeSeq([]),
+                makeSeq([])
+            ],
+            fmFreqs: [70, 100, 70, 100, 70, 100, 70, 100, 70, 70, 100, 100, 70, 100, 70, 70, 63, 60, 70, 100, 70, 100, 100, 100, 70, 70, 70, 100, 64, 100, 64, 100, 56, 100, 56, 100, 56, 100, 56, 100, 56, 56, 56, 56, 56, 56, 56, 100, 53, 100, 53, 100, 53, 100, 53, 100, 66, 100, 66, 100, 66, 100, 66, 100]
+        },
+
+        synths: {
+            seq2: makeSeq([0, 12, 16, 19, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 58]),
+            seq3: makeSeq([]),
+            acc2: makeSeq([]),
+            acc3: makeSeq([])
+        },
+
+        freqs2: [302, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 302, 440, 440, 440, 404, 440, 440, 361, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 361, 440, 302, 440, 244, 440, 361, 440, 302, 440, 244, 440, 361, 440, 339, 440, 339, 440, 302, 440, 346, 440, 440, 440, 230, 440, 440, 440, 440, 440],
+        freqs3: [440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440, 440],
+        
+        chords: {
+            qual: [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+        }
+    },
+
+   
    "BASS": {
         name: "FM BASS ",
         masterLength: 64,
