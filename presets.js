@@ -28,8 +28,9 @@ window.FACTORY_PRESETS = {
 
 
   
+   
     "fresh": {
-        name: "KOOL &amp; THE GAND - FRESH",
+        name: "KOOL &amp; THE GANG - FRESH",
         masterLength: 64,
         bpm: 125,
         swing: 0,
@@ -118,6 +119,8 @@ window.FACTORY_PRESETS = {
     },
 
 
+
+   
    
    "BASS": {
         name: "FM BASS ",
