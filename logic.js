@@ -91,7 +91,7 @@ function initFaders(idPrefix, seqId) {
     if (!freqGrid) return;
     let htmlContent = '';
     for (let i = 0; i < 16; i++) {
-        htmlContent += `<div class="fader-unit"><span class="hz-label">440Hz</span><input type="range" class="freq-fader" data-seq="${seqId}" data-index="${i}" min="50" max="880" value="440"></div>`;
+        htmlContent += `<div class="fader-unit"><span class="hz-label">440Hz</span><input type="range" class="freq-fader" data-seq="${seqId}" data-index="${i}" min="50" max="880" value="440" orient="vertical"></div>`;
     }
     freqGrid.innerHTML = htmlContent;
 }
@@ -400,7 +400,7 @@ function initFMExtension() {
     
     let html = '';
     for(let i=0; i<16; i++) {
-        html += `<div class="fm-fader-unit"><span class="fm-hz-label">100</span><input type="range" class="fm-freq-fader" data-index="${i}" min="40" max="400" value="100" step="1"></div>`;
+        html += `<div class="fm-fader-unit"><span class="fm-hz-label">100</span><input type="range" class="fm-freq-fader" data-index="${i}" min="40" max="400" value="100" step="1" orient="vertical"></div>`;
     }
     fmContainer.innerHTML = html;
     const section = grid1.closest('.rack-section');
