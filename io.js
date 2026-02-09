@@ -26,6 +26,11 @@ const IO = {
                     swing: parseInt(document.getElementById('global-swing').value)
                 },
 
+vcf: {
+        seq2: window.vcfBank.seq2,
+        seq3: window.vcfBank.seq3
+    },
+
                 // REGLAGES AUDIOS COMPLETS
                 controls: {
                     isChordMode: window.isChordModeSeq3, 
@@ -118,6 +123,16 @@ const IO = {
                     }
                     if(updateFunc) updateFunc(val);
                 };
+
+
+// RESTAURATION VCF
+if (data.vcf) {
+    window.applyFilterConfig(2, data.vcf.seq2);
+    window.applyFilterConfig(3, data.vcf.seq3);
+} else {
+    window.applyFilterConfig(2, { cutoff: 0.5, res: 0, bypass: true });
+    window.applyFilterConfig(3, { cutoff: 0.5, res: 0, bypass: true });
+}
 
                 // 1. DETACHER LE SLOT MEMOIRE
                 if(window.currentMemorySlot !== undefined) {
