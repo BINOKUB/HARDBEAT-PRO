@@ -154,18 +154,14 @@
         <a href="#drums">3. Drums & Polyrythmie</a>
         <a href="#drums-loop" class="sub-link">↳ Loop Lengths</a>
         
-        <a href="#synths">4. Synthétiseurs</a>
-        <a href="#synths-seq2" class="sub-link">↳ SEQ 2 (Lead)</a>
+        <a href="#synths">4. Synthétiseurs & FX</a>
+        <a href="#synths-seq2" class="sub-link">↳ SEQ 2 (Lead + VCF)</a>
         <a href="#synths-seq3" class="sub-link">↳ SEQ 3 (Rumble)</a>
         
         <a href="#memory">5. Mémoire "Total Recall"</a>
         <a href="#io-system">6. Import / Export JSON</a>
         
-     <!--   <a href="#generator">7. Preset Generator</a> -->
-
-      <!--  <a href="https://github.com/binokub/HARDBEAT-DEV/wiki" target="_blank" class="wiki-link">⚙️ DEV WIKI (GITHUB)</a> -->
-
-        <a href="index.html" class="back-btn">← RETOUR AU HUB</a>
+      <a href="index.html" class="back-btn">← RETOUR AU HUB</a>
     </nav>
 
     <main>
@@ -173,7 +169,7 @@
             
             <section id="intro">
                 <h1>HARDBEAT PRO 64</h1>
-                <div class="subtitle">MANUEL UTILISATEUR V21 (PLATINUM)</div>
+                <div class="subtitle">MANUEL UTILISATEUR V2.0 (PLATINUM)</div>
                 <p>Bienvenue dans la documentation officielle. Hardbeat Pro est une workstation techno "Browser-based" conçue pour la performance live et la composition Hardgroove avancée.</p>
                 <div class="alert">
                     <strong>Note :</strong> Cette application utilise l'API Web Audio native pour une latence nulle. Chrome, Edge ou Brave sont recommandés pour une stabilité optimale.
@@ -203,13 +199,17 @@
             </section>
 
             <section id="synths">
-                <h2>3. Synthétiseurs de Fréquence</h2>
+                <h2>3. Synthétiseurs de Fréquence & FX</h2>
                 
-                <h3 class="purple" id="synths-seq2">SEQ 2 (Lead / Cyan)</h3>
-                <p>Synthétiseur monophonique avec distorsion légère. Chaque pas possède son propre fader de fréquence (Hz).</p>
+                <h3 class="purple" id="synths-seq2">SEQ 2 (Lead + VCF)</h3>
+                <p>Synthétiseur monophonique avec distorsion légère.</p>
+                <ul>
+                    <li><strong>Fréquence :</strong> Chaque pas possède son propre fader de fréquence (Hz).</li>
+                    <li><strong>VCF (Filtre) :</strong> Le SEQ 2 est la seule piste équipée d'un filtre résonant complet. Utilisez les potentiomètres <code>CUTOFF</code> et <code>RES</code> pour sculpter le son en temps réel (Acid style).</li>
+                </ul>
 
                 <h3 class="purple" id="synths-seq3">SEQ 3 (Rumble / Violet)</h3>
-                <p>Extension dédiée aux basses fréquences Hardgroove. Il possède un indicateur visuel sur la grille :</p>
+                <p>Extension dédiée aux basses fréquences Hardgroove (sans filtre VCF). Il possède un indicateur visuel sur la grille :</p>
                 <ul>
                     <li><strong>M (Jaune) :</strong> Accord Majeur</li>
                     <li><strong>m (Gris) :</strong> Accord Mineur</li>
@@ -219,15 +219,16 @@
 
             <section id="memory">
                 <h2>5. Système de Mémoire "Total Recall"</h2>
-                <p>Hardbeat Pro V21 intègre un nouveau système de mémoire ultra-puissant.</p>
+                <p>Hardbeat Pro V2.0 intègre un nouveau système de mémoire ultra-puissant.</p>
                 
                 <h3 class="yellow">8 Slots de Scène</h3>
                 <p>Les pads <code>1</code> à <code>8</code> en haut de l'interface permettent de stocker des "Scènes" complètes. Contrairement aux versions précédentes, ce système sauvegarde <strong>TOUT</strong> :</p>
                 <ul>
-                    <li>Les positions de tous les potentiomètres (Knobs) et Faders.</li>
+                    <li>Les positions de tous les potentiomètres (Knobs), Faders et Filtres (VCF).</li>
                     <li>L'état des boutons <strong>MUTE (M)</strong> et <strong>SOLO (S)</strong>.</li>
                     <li>Les longueurs de pistes (Polyrhythms).</li>
                     <li>Les séquences, accents et fréquences.</li>
+                    <li>L'état du bouton <strong>CHORD MODE</strong> (Seq 3).</li>
                 </ul>
 
                 <h3>Utilisation</h3>
@@ -249,15 +250,7 @@
                 <p>Charge un fichier <code>.json</code> exporté. Le système restaure instantanément toute votre session.</p>
             </section>
 
-           <!--
-            <section id="generator">
-                <h2>7. Le Preset Generator</h2>
-                <p>Pour coder vos morceaux en dur dans le code source (presets d'usine), utilisez l'outil dédié :</p>
-                <p><a href="." target="_blank" style="color:var(--cyan)"> Ouvrir le Générateur V19</a></p>
-                <p>Il permet de convertir vos exports JSON en code JavaScript permanent pour le fichier <code>presets.js</code>.</p>
-            </section> -->
-
-            <br><br><br>
+           <br><br><br>
             <p style="text-align:center; color:#555; font-size:0.8rem;">Hardbeat Pro Documentation © 2026 - Binokub.com</p>
         </div>
     </main>
