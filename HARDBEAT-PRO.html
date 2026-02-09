@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HARDBEAT PRO v1.1.2</title>
+    <title>HARDBEAT PRO v2.0.0</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,11 +21,13 @@
                         <option value="init">INIT / BLANK</option>
                         <option value="rumble">BERLIN RUMBLE</option>
                         <option value="polymills">DETROIT POLY</option>
-                        <option value="hardgroove">HARDGROOVE</option>
-			<option value="GROOVE2">HARDGROOVE 2</option>
+                       <option value="GROOVE2">HARDGROOVE 2</option>
+			<option value="hardgroove3">HARDGROOVE 3</option>
+			<option value="hardgroover">RANDOM-X FANTOM</option>
                         <option value="POLYSWEET">RANDOM-X-001</option>
                         <option value="BASS">FM BASS</option>
  			<option value="GROOVE1">SYMFONIC GROOVE</option>
+			<option value="symfonicgroove2">SYMFONIC GROOVE 2</option>
                     </select>
                 </div>
 
@@ -241,18 +243,72 @@
             <div class="freq-sliders-container" id="grid-freq-seq2"></div>
             <div class="step-grid" id="grid-seq2"></div>
             
-            <div class="synth-controls" style="display:flex; gap:10px; margin-top:10px; align-items:center;">
-                <button id="btn-mute-seq2" class="btn-synth-mute" data-target="2">MUTE SEQ 2</button>
-                <div class="random-unit">
-                    <button class="btn-random" data-target="2">RANDOMIZE SEQ 2</button>
-                </div>
-            </div>
+           <div class="synth-controls" style="display:flex; gap:10px; margin-top:10px; align-items:center;">
+    <button id="btn-mute-seq2" class="btn-synth-mute" data-target="2">MUTE SEQ 2</button>
+    
+    <button class="btn-open-filter" data-target="2" style="border:1px solid #00f3ff; color:#00f3ff; background:transparent; font-weight:bold; font-size:11px; padding:5px 10px; cursor:pointer;">
+        FILTER / FX
+    </button>
+
+    <div class="random-unit">
+        <button class="btn-random" data-target="2">RANDOMIZE SEQ 2</button>
+    </div>
+</div>
+
+
         </section>
         
         <div id="extension-zone"></div>
         <footer id="ui-footer"><button id="add-seq-btn">+ EXTEND TO SEQ 3 (HARDGROOVE LAYER)</button></footer>
     </main>
-    
+   
+ 
+
+<div id="vcf-module-overlay" class="hidden">
+    <div id="vcf-rack">
+        <div class="vcf-header">
+            <div class="vcf-title">VCF-2026 <span style="font-size:0.6em; color:#666;">// ANALOG FILTER</span></div>
+            <button id="btn-close-vcf">X</button>
+        </div>
+
+        <div class="vcf-display">
+            <canvas id="filter-graph" width="200" height="60"></canvas>
+        </div>
+
+        <div class="knob-container">
+            <div class="control-unit">
+                <div class="knob-surround">
+                    <div class="knob large" id="knob-cutoff" data-param="cutoff" data-value="0.5">
+                        <div class="knob-indicator"></div>
+                    </div>
+                </div>
+                <label>FREQ</label>
+                <span class="val-display" id="val-cutoff">1.2 kHz</span>
+            </div>
+
+            <div class="control-unit">
+                <div class="knob-surround">
+                    <div class="knob small" id="knob-res" data-param="res" data-value="0">
+                        <div class="knob-indicator"></div>
+                    </div>
+                </div>
+                <label>RES</label>
+                <span class="val-display" id="val-res">0%</span>
+            </div>
+        </div>
+
+        <div class="vcf-target-info">
+            EDITING: <span id="vcf-target-name" style="color:#00f3ff; font-weight:bold;">SEQ 2</span>
+            <div class="bypass-control" style="float:left;">
+                 <label style="font-size:9px; color:#666;">ACTIVE</label>
+                 <input type="checkbox" id="vcf-bypass-toggle" checked>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
     <script src="visualizer.js"></script>
     <script src="audio.js"></script>
     <script src="presets.js"></script>
