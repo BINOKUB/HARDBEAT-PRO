@@ -47,8 +47,21 @@ window.isMutedSeq2 = false;
 window.isMutedSeq3 = false;
 
 // --- FX ---
+// --- FX & FILTRES VCF (v1.2) ---
 const distoNode2 = window.audioCtx.createWaveShaper();
 const distoNode3 = window.audioCtx.createWaveShaper();
+
+// CRÉATION DES FILTRES GLOBAUX (Nouveauté v1.2)
+window.globalFilter2 = window.audioCtx.createBiquadFilter();
+window.globalFilter2.type = "lowpass";
+window.globalFilter2.frequency.value = 20000; // Ouvert par défaut
+window.globalFilter2.Q.value = 0;
+
+window.globalFilter3 = window.audioCtx.createBiquadFilter();
+window.globalFilter3.type = "lowpass";
+window.globalFilter3.frequency.value = 20000; // Ouvert par défaut
+window.globalFilter3.Q.value = 0;
+
 const delayNode = window.audioCtx.createDelay(2.0);
 const feedback = window.audioCtx.createGain();
 const delayMix = window.audioCtx.createGain();
@@ -65,10 +78,31 @@ function createDistortionCurve(amount) {
 
 distoNode2.curve = createDistortionCurve(0);
 distoNode3.curve = createDistortionCurve(0);
-distoNode2.connect(masterGain); distoNode2.connect(delayNode);
-distoNode3.connect(masterGain); distoNode3.connect(delayNode);
-delayNode.connect(feedback); feedback.connect(delayNode); delayNode.connect(delayMix); delayMix.connect(masterGain);
-feedback.gain.value = 0; delayMix.gain.value = 0;
+
+// --- NOUVEAU ROUTAGE AUDIO (CHAINAGE) ---
+// AVANT : Disto -> Master & Delay
+// APRÈS : Disto -> FILTRE -> Master & Delay
+
+// CHAINE SEQ 2
+distoNode2.connect(window.globalFilter2);      // Disto entre dans le Filtre
+window.globalFilter2.connect(masterGain);      // Filtre sort vers Master
+window.globalFilter2.connect(delayNode);       // Filtre sort aussi vers Delay
+
+// CHAINE SEQ 3
+distoNode3.connect(window.globalFilter3);      // Disto entre dans le Filtre
+window.globalFilter3.connect(masterGain);      // Filtre sort vers Master
+window.globalFilter3.connect(delayNode);       // Filtre sort aussi vers Delay
+
+// CHAINE DELAY (Inchangée)
+delayNode.connect(feedback); 
+feedback.connect(delayNode); 
+delayNode.connect(delayMix); 
+delayMix.connect(masterGain);
+
+feedback.gain.value = 0; 
+delayMix.gain.value = 0;
+
+// FIN DES FX
 
 // --- API (Liens avec Logic.js) ---
 window.updateSynth2Disto = function(val) { 
@@ -377,3 +411,29 @@ setTimeout(() => {
 }, 500);
 
 console.log("AUDIO V11 : Engine Ready & Secured.");
+
+
+// --- VCF CONTROL API (v1.2) ---
+window.updateFilterFreq = function(freqHz) {
+    // Sélectionne le bon filtre selon la piste active
+    let target = (window.vcfState && window.vcfState.trackId === 3) ? window.globalFilter3 : window.globalFilter2;
+    
+    // Si BYPASS est activé (checkbox décochée = true), on ouvre le filtre à fond
+    if (window.vcfState && window.vcfState.bypass) {
+        target.frequency.setTargetAtTime(20000, window.audioCtx.currentTime, 0.1);
+        return;
+    }
+
+    if (target) {
+        // Lissage pour éviter les "zipper noise"
+        target.frequency.setTargetAtTime(freqHz, window.audioCtx.currentTime, 0.05);
+    }
+};
+
+window.updateFilterRes = function(resVal) {
+    let target = (window.vcfState && window.vcfState.trackId === 3) ? window.globalFilter3 : window.globalFilter2;
+    
+    if (target) {
+        target.Q.setTargetAtTime(resVal, window.audioCtx.currentTime, 0.05);
+    }
+};
